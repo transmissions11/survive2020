@@ -63,6 +63,9 @@ pub fn load_sprite(world: &mut World, filename: &str, sprite_number: usize) -> S
 
 /// Displays the level title at the top of the screen.
 pub fn init_level_title(world: &mut World, filename: &str) {
+    // Delete previous titles
+    delete_level_title(world);
+
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 
     let sprite = load_sprite(world, filename, 0);
@@ -70,7 +73,12 @@ pub fn init_level_title(world: &mut World, filename: &str) {
     let mut transform = Transform::default();
     transform.set_translation_xyz(dimensions.width() * 0.5, dimensions.height() * 0.9, 0.);
 
-    world.create_entity().with(transform).with(sprite).build();
+    world
+        .create_entity()
+        .with(LevelTitle)
+        .with(transform)
+        .with(sprite)
+        .build();
 }
 
 /// Deletes all level titles visible
@@ -83,13 +91,14 @@ pub fn delete_level_title(world: &mut World) {
         for (_title, entity) in (&titles, &entities).join() {
             result.push(entity);
         }
-        println!("{:?}", titles.as_slice().len());
 
         result
     };
-    world
-        .delete_entities(to_delete.as_slice())
-        .expect("Couldn't delete title entities!");
+    if !to_delete.is_empty() {
+        world
+            .delete_entities(to_delete.as_slice())
+            .expect("Couldn't delete title entities!");
+    }
 }
 
 /// Pushes to a new level when the Z key is pressed.
@@ -117,7 +126,6 @@ fn init_camera(world: &mut World) {
 
     world
         .create_entity()
-        .with(LevelTitle)
         .with(Camera::standard_2d(dimensions.width(), dimensions.height()))
         .with(transform)
         .build();

@@ -9,10 +9,6 @@ impl SimpleState for HornetState {
         init_level_title(world, "hornets_title.png");
     }
 
-    fn on_pause(&mut self, data: StateData<'_, GameData<'_, '_>>) {
-        delete_level_title(data.world);
-    }
-
     fn handle_event(
         &mut self,
         mut _data: StateData<'_, GameData<'_, '_>>,

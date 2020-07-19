@@ -1,7 +1,5 @@
 use crate::states::hornets::HornetState;
-use crate::states::{
-    delete_level_title, init_camera, init_level_title, push_to_level_on_key, LevelTitle,
-};
+use crate::states::{init_camera, init_level_title, push_to_level_on_key, LevelTitle};
 use amethyst::prelude::*;
 
 pub struct WildfireState;
@@ -15,10 +13,6 @@ impl SimpleState for WildfireState {
         init_camera(world);
 
         init_level_title(world, "wildfires_title.png");
-    }
-
-    fn on_pause(&mut self, data: StateData<'_, GameData<'_, '_>>) {
-        delete_level_title(data.world);
     }
 
     fn handle_event(
