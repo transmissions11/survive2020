@@ -1,4 +1,4 @@
-use crate::states::{delete_level_title, init_level_title, push_to_level_on_key};
+use crate::states::{init_level_title, push_to_level_on_key};
 use amethyst::prelude::*;
 
 pub struct HornetState;
