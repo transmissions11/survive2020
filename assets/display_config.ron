@@ -1,0 +1,4 @@
+(
+  title: "Survive 2020",
+  dimensions: Some((600, 600)),
+)
