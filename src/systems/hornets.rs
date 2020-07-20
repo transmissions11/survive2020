@@ -1,11 +1,9 @@
 use crate::states::hornets::ProgressBar;
-use crate::states::LevelTitle;
+
+use amethyst::core::ecs::{Join, Read, System, SystemData, WriteStorage};
+
 use amethyst::{
-    core::math::Vector3,
-    core::timing::Time,
-    core::transform::Transform,
-    derive::SystemDesc,
-    ecs::prelude::{Join, Read, ReadStorage, System, SystemData, WriteStorage},
+    core::math::Vector3, core::timing::Time, core::transform::Transform, derive::SystemDesc,
 };
 
 #[derive(SystemDesc)]

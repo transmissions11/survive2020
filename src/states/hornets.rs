@@ -1,6 +1,6 @@
 use crate::states::{
-    create_optional_systems_dispatcher, init_level_title, load_sprite, push_to_level_on_key,
-    run_systems,
+    create_optional_systems_dispatcher, delete_all_entities_with_component, init_level_title,
+    load_sprite, push_to_level_on_key, run_systems,
 };
 
 use amethyst::ecs::{Component, DenseVecStorage};
@@ -29,6 +29,9 @@ fn init_abilities_bar(world: &mut World, charged_percentage: f32) {
         charged_percentage <= 1. && charged_percentage >= 0.,
         "Charge Percentage must be between 1 and 0!"
     );
+
+    // Remove past progress bars
+    delete_all_entities_with_component::<ProgressBar>(world);
 
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 

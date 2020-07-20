@@ -1,11 +1,8 @@
+use amethyst::renderer::RenderFlat2D;
 use amethyst::{
     core::transform::TransformBundle,
     prelude::*,
-    renderer::{
-        plugins::{RenderFlat2D, RenderToWindow},
-        types::DefaultBackend,
-        RenderingBundle,
-    },
+    renderer::{plugins::RenderToWindow, types::DefaultBackend, RenderingBundle},
     utils::application_root_dir,
 };
 

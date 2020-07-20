@@ -5,8 +5,8 @@ use crate::states::{
 };
 
 use crate::systems::wildfires::WildfiresSystem;
-use amethyst::ecs::Dispatcher;
 use amethyst::prelude::*;
+use amethyst::shred::Dispatcher;
 
 #[derive(Default)]
 pub struct WildfireState<'a, 'b> {

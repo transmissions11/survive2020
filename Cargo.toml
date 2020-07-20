@@ -1,7 +1,7 @@
 [package]
-name = "amethyst-starter-2d"
-version = "0.2.0"
-authors = ["Hilmar Wiegand <me@hwgnd.de>"]
+name = "survive2020"
+version = "0.1.0"
+authors = ["t11s <greenfeatherhelp@gmail.com>"]
 edition = "2018"
 
 [dependencies]

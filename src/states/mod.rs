@@ -65,7 +65,7 @@ pub fn load_sprite(world: &mut World, filename: &str, sprite_number: usize) -> S
 /// Displays the level title at the top of the screen.
 pub fn init_level_title(world: &mut World, filename: &str) {
     // Delete previous titles
-    delete_level_title(world);
+    delete_all_entities_with_component::<LevelTitle>(world);
 
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 
@@ -82,11 +82,11 @@ pub fn init_level_title(world: &mut World, filename: &str) {
         .build();
 }
 
-/// Deletes all level titles visible
-pub fn delete_level_title(world: &mut World) {
+/// Deletes all entities with the associated component.
+pub fn delete_all_entities_with_component<T: Component>(world: &mut World) {
     let to_delete = {
         let mut result = Vec::new();
-        let titles = world.read_storage::<LevelTitle>();
+        let titles = world.read_storage::<T>();
         let entities = world.entities();
 
         for (_title, entity) in (&titles, &entities).join() {
