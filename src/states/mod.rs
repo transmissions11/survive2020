@@ -4,8 +4,9 @@ pub mod wildfires;
 use amethyst::{
     assets::{AssetStorage, Loader},
     core::transform::Transform,
+    core::ArcThreadPool,
     ecs::prelude::Join,
-    ecs::{Component, DenseVecStorage},
+    ecs::{Component, DenseVecStorage, Dispatcher, DispatcherBuilder},
     input::{is_key_down, VirtualKeyCode},
     prelude::*,
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
@@ -101,7 +102,7 @@ pub fn delete_level_title(world: &mut World) {
     }
 }
 
-/// Pushes to a new level when the Z key is pressed.
+/// Pushes to a new level when the Z key is pressed and pops when the X key is pressed.
 pub fn push_to_level_on_key(
     event: StateEvent,
     new_state: impl SimpleState + 'static,
@@ -109,6 +110,8 @@ pub fn push_to_level_on_key(
     if let StateEvent::Window(event) = &event {
         if is_key_down(event, VirtualKeyCode::Z) {
             Trans::Push(Box::new(new_state))
+        } else if is_key_down(event, VirtualKeyCode::X) {
+            Trans::Pop
         } else {
             Trans::None
         }
@@ -117,8 +120,40 @@ pub fn push_to_level_on_key(
     }
 }
 
+/// Creates a systems dispatcher. Takes a closure where the caller adds systems.
+pub fn create_systems_dispatcher<'a, 'b>(
+    world: &mut World,
+    add_systems: impl FnOnce(&mut DispatcherBuilder),
+) -> Dispatcher<'a, 'b> {
+    let mut builder = DispatcherBuilder::new();
+
+    add_systems(&mut builder);
+
+    let mut dispatcher = builder
+        .with_pool((*world.read_resource::<ArcThreadPool>()).clone())
+        .build();
+    dispatcher.setup(world);
+
+    dispatcher
+}
+
+/// Creates a systems dispatcher. Takes a closure where the caller adds systems. Returns a Some(DispatchBuilder).
+pub fn create_optional_systems_dispatcher<'a, 'b>(
+    world: &mut World,
+    add_systems: impl FnOnce(&mut DispatcherBuilder),
+) -> Option<Dispatcher<'a, 'b>> {
+    Some(create_systems_dispatcher(world, add_systems))
+}
+
+/// Take's a state's dispatcher and if it exists, runs all of its systems.
+pub fn run_systems(world: &World, dispatcher: &mut Option<Dispatcher>) {
+    if let Some(dispatcher) = dispatcher.as_mut() {
+        dispatcher.dispatch(world);
+    }
+}
+
 /// Creates the 2D camera.
-fn init_camera(world: &mut World) {
+pub fn init_camera(world: &mut World) {
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 
     let mut transform = Transform::default();

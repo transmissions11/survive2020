@@ -10,6 +10,7 @@ use amethyst::{
 };
 
 mod states;
+mod systems;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -29,7 +30,11 @@ fn main() -> amethyst::Result<()> {
                 .with_plugin(RenderFlat2D::default()),
         )?;
 
-    let mut game = Application::new(resources, states::wildfires::WildfireState, game_data)?;
+    let mut game = Application::new(
+        resources,
+        states::wildfires::WildfireState::default(),
+        game_data,
+    )?;
     game.run();
 
     Ok(())
