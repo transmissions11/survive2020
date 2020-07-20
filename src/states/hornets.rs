@@ -3,12 +3,21 @@ use crate::states::{
     run_systems,
 };
 
+use amethyst::ecs::{Component, DenseVecStorage};
 use amethyst::{
     core::math::Vector3, core::transform::Transform, ecs::Dispatcher, prelude::*,
     window::ScreenDimensions,
 };
 
 use crate::systems::hornets::HornetsSystem;
+
+#[derive(Debug, Default)]
+pub struct ProgressBar {
+    pub(crate) percentage: f32,
+}
+impl Component for ProgressBar {
+    type Storage = DenseVecStorage<Self>;
+}
 
 #[derive(Default)]
 pub struct HornetState<'a, 'b> {
@@ -53,6 +62,9 @@ fn init_abilities_bar(world: &mut World, charged_percentage: f32) {
         .create_entity()
         .with(progress_bar_transform)
         .with(progress_bar)
+        .with(ProgressBar {
+            percentage: charged_percentage,
+        })
         .build();
 }
 
