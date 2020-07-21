@@ -43,7 +43,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
                 info: AbilityInfo {
                     ability_type: AbilityType::Vaccine,
                     seconds_to_charge: 1,
-                    duration: Some(2),
+                    duration: Some(1),
                     icon: vaccine_sprite,
                     max_uses: Some(5),
                 },

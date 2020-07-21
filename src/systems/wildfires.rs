@@ -1,7 +1,6 @@
 use amethyst::{
-    core::transform::Transform,
     derive::SystemDesc,
-    ecs::prelude::{Join, Read, ReadStorage, System, SystemData, WriteStorage},
+    ecs::prelude::{System, SystemData},
 };
 
 #[derive(SystemDesc)]
