@@ -36,7 +36,7 @@ pub struct AbilityInfo {
     /// Seconds for the ability to be active (and be stored in the current abilities vector).
     /// If there is no duration,
     /// **the System managing this ability will have to
-    /// manually remove it from the active abilities vector.**
+    /// manually remove it from the `active_abilities` vector.**
     pub duration: Option<u32>,
     /// The type of ability.
     pub ability_type: AbilityType,

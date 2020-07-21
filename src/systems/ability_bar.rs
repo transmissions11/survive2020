@@ -190,7 +190,9 @@ pub fn update_progress_bar(
     }
 }
 
-/// Runs ability specific logic if ability is off cooldown. Sets ability percentage to 0.
+/// Updates the ability's "uses" counter
+/// and sets the ability's charge percentage to 0 (if the ability does not have a duration).
+/// Adds the index of the ability to the `active_abilities` vector.
 pub fn use_ability(
     progress_bar: &ProgressBar,
     transform: &mut UiTransform,
@@ -214,6 +216,7 @@ pub fn use_ability(
         }
 
         // Level-specific systems will do as they please with the ability being active:
+        // If the ability does not have a duration, the system will have to manually remove the ability.
         abilities.active_abilities.push(progress_bar.ability_index);
     }
 }
