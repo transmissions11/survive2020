@@ -1,7 +1,7 @@
 use crate::states::hornets::HornetState;
 use crate::states::{
-    create_optional_systems_dispatcher, init_camera, init_level_title, push_to_next_level_on_key,
-    run_systems, LevelTitle,
+    create_optional_systems_dispatcher, init_camera, init_level_title, load_sprite,
+    push_to_next_level_on_key, run_systems, LevelTitle,
 };
 
 use crate::resources::abilities::{
@@ -35,15 +35,17 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
         init_level_title(world, "wildfires_title.png");
 
+        load_sprite(world, "vaccine_ability.png", 0);
+
         init_abilities_bar(
             world,
             AbilitiesResource::new(vec![Ability {
                 info: AbilityInfo {
                     ability_type: AbilityType::Vaccine,
-                    seconds_to_charge: 5,
-                    duration: Some(5),
-                    icon: None,
-                    max_uses: Some(5),
+                    seconds_to_charge: 1,
+                    duration: Some(2),
+                    icon: String::from("vaccine_ability.png"),
+                    max_uses: Some(3),
                 },
                 current_state: AbilityState::start_on_cooldown(),
             }]),
