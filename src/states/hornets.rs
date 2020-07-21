@@ -20,13 +20,14 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
-
         self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
             builder.add(HornetsSystem, "hornets", &[])
         });
 
         init_level_title(world, "hornets_title.png");
+
+        let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
+        let swatter_sprite = load_sprite(world, "swatter_ability.png", 0);
 
         init_abilities_bar(
             world,
@@ -36,27 +37,17 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                         ability_type: AbilityType::Vaccine,
                         seconds_to_charge: 1,
                         duration: None,
-                        icon: vaccine_sprite.clone(),
-                        max_uses: None,
-                    },
-                    current_state: AbilityState::default(),
-                },
-                Ability {
-                    info: AbilityInfo {
-                        ability_type: AbilityType::Vaccine,
-                        seconds_to_charge: 2,
-                        duration: None,
-                        icon: vaccine_sprite.clone(),
-                        max_uses: None,
-                    },
-                    current_state: AbilityState::default(),
-                },
-                Ability {
-                    info: AbilityInfo {
-                        ability_type: AbilityType::Vaccine,
-                        seconds_to_charge: 4,
-                        duration: None,
                         icon: vaccine_sprite,
+                        max_uses: None,
+                    },
+                    current_state: AbilityState::default(),
+                },
+                Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::Vaccine,
+                        seconds_to_charge: 5,
+                        duration: None,
+                        icon: swatter_sprite,
                         max_uses: None,
                     },
                     current_state: AbilityState::default(),
