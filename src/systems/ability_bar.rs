@@ -1,4 +1,4 @@
-use crate::resources::abilities::Abilities;
+use crate::resources::abilities::AbilitiesResource;
 use crate::states::{delete_all_entities_with_component, load_sprite};
 use amethyst::core::ecs::{Component, DenseVecStorage, VecStorage, World};
 use amethyst::core::shrev::EventChannel;
@@ -11,6 +11,20 @@ pub const PROGRESS_BAR_MAX_WIDTH: f32 = 47.;
 pub const PROGRESS_BAR_HEIGHT: f32 = 7.;
 /// The extra spacing between ability frames.
 pub const ABILITY_FRAME_SPACING: f32 = 10.;
+
+pub trait RemoveItem<T> {
+    fn remove_first_found_item(&mut self, item: &T) -> Option<T>;
+}
+
+impl<T: PartialEq> RemoveItem<T> for Vec<T> {
+    fn remove_first_found_item(&mut self, item: &T) -> Option<T> {
+        let pos = match self.iter().position(|x| *x == *item) {
+            Some(x) => x,
+            None => return None,
+        };
+        Some(self.remove(pos))
+    }
+}
 
 #[derive(Default)]
 pub struct ProgressBar {
@@ -29,7 +43,7 @@ impl Component for AbilityBarComponent {
 }
 
 /// Creates an ability bar based off of a vector of abilities. Updates the Abilities resource with the new abilities.
-pub fn init_abilities_bar(world: &mut World, mut abilities: Abilities) {
+pub fn init_abilities_bar(world: &mut World, mut abilities: AbilitiesResource) {
     // Delete past ability bar
     delete_all_entities_with_component::<AbilityBarComponent>(world);
 
@@ -39,14 +53,14 @@ pub fn init_abilities_bar(world: &mut World, mut abilities: Abilities) {
 
     while base_offset
         != dimensions.width()
-            - (((abilities.current_abilities.len() - 1) as f32
+            - (((abilities.available_abilities.len() - 1) as f32
                 * (ABILITY_FRAME_HEIGHT_AND_WITH + ABILITY_FRAME_SPACING))
                 + base_offset)
     {
         base_offset += 1.0;
     }
 
-    for (i, ability) in abilities.current_abilities.iter_mut().enumerate() {
+    for (i, ability) in abilities.available_abilities.iter_mut().enumerate() {
         ability.current_state.ui_button = Some(create_ability_item(
             world,
             base_offset + ((ABILITY_FRAME_HEIGHT_AND_WITH + ABILITY_FRAME_SPACING) * i as f32),
@@ -117,59 +131,90 @@ pub fn create_ability_item(world: &mut World, x_padding: f32, index: usize) -> U
 }
 
 /// Updates a progress bar and the ability at the index.
+/// It will increase the progress bar at the speed specified if the ability is on cooldown.
+/// It will decrease the progress bar if the ability has a duration and is active.
+/// It will enforce max uses if the ability has a limit.
+/// If the ability has a duration and that duration is over, it will remove the ability from the active abilities vector.
 pub fn update_progress_bar(
     progress_bar: &ProgressBar,
     transform: &mut UiTransform,
-    abilities: &mut Abilities,
+    abilities: &mut AbilitiesResource,
     time: &Time,
     arena_height: f32,
 ) {
-    let ability = &mut abilities.current_abilities[progress_bar.ability_index];
+    let ability = &mut abilities.available_abilities[progress_bar.ability_index];
 
-    let mut new_percentage = ability.current_state.percentage
-        + (time.delta_seconds() / (11 - ability.info.speed) as f32);
+    // If the ability is active:
+    if abilities
+        .active_abilities
+        .contains(&progress_bar.ability_index)
+        && ability.info.duration.is_some()
+    {
+        // Lower the progress bar until the ability duration is complete.
+        let mut new_percentage = ability.current_state.percentage
+            - (time.delta_seconds() / ability.info.duration.unwrap() as f32);
 
-    if new_percentage > 1.0 {
-        new_percentage = 1.0;
-    }
-
-    // If the ability has a max use set
-    if let Some(max_uses) = ability.info.max_uses {
-        // If this ability has already been used up
-        if ability.current_state.uses >= max_uses {
-            // Set the charge percentage to 0
+        if new_percentage <= 0.0 {
             new_percentage = 0.0;
+            // Remove the ability from being active.
+            abilities
+                .active_abilities
+                .remove_first_found_item(&progress_bar.ability_index);
         }
+
+        ability.current_state.percentage = new_percentage;
+
+        *transform =
+            create_progress_bar_transform(progress_bar.x_offset, new_percentage, arena_height);
+    } else {
+        let mut new_percentage = ability.current_state.percentage
+            + (time.delta_seconds() / ability.info.seconds_to_charge as f32);
+
+        if new_percentage > 1.0 {
+            new_percentage = 1.0;
+        }
+
+        // If the ability has a max use set
+        if let Some(max_uses) = ability.info.max_uses {
+            // If this ability has already been used up
+            if ability.current_state.uses >= max_uses {
+                // Set the charge percentage to 0
+                new_percentage = 0.0;
+            }
+        }
+
+        ability.current_state.percentage = new_percentage;
+
+        *transform =
+            create_progress_bar_transform(progress_bar.x_offset, new_percentage, arena_height);
     }
-
-    ability.current_state.percentage = new_percentage;
-
-    *transform = create_progress_bar_transform(progress_bar.x_offset, new_percentage, arena_height);
 }
 
 /// Runs ability specific logic if ability is off cooldown. Sets ability percentage to 0.
 pub fn use_ability(
     progress_bar: &ProgressBar,
     transform: &mut UiTransform,
-    abilities: &mut Abilities,
+    abilities: &mut AbilitiesResource,
 
     arena_height: f32,
 ) {
-    let ability = &mut abilities.current_abilities[progress_bar.ability_index];
+    let ability = &mut abilities.available_abilities[progress_bar.ability_index];
 
-    // If ability is off cooldown
+    // If ability is off cooldown (and is not active)
     if ability.current_state.percentage == 1.0 {
-        // Set the charge percentage to 0
-        {
+        // If ability has a duration:
+        if let Some(_) = ability.info.duration {
+            // Just update the uses.
+            ability.current_state.uses += 1;
+        } else {
+            // Set the charge percentage to 0 and update the uses.
             ability.current_state.percentage = 0.0;
             ability.current_state.uses += 1;
             *transform = create_progress_bar_transform(progress_bar.x_offset, 0.0, arena_height);
         }
 
-        //TODO: Do specific logic based on what type of ability this is
-        match ability.info.ability_type {
-            _ => (),
-        };
+        // Level-specific systems will do as they please with the ability being active:
+        abilities.active_abilities.push(progress_bar.ability_index);
     }
 }
 
@@ -193,7 +238,7 @@ impl<'s> System<'s> for AbilityBarSystem {
         WriteStorage<'s, UiTransform>,
         Read<'s, Time>,
         ReadExpect<'s, ScreenDimensions>,
-        WriteExpect<'s, Abilities>,
+        WriteExpect<'s, AbilitiesResource>,
     );
 
     fn run(
@@ -204,7 +249,7 @@ impl<'s> System<'s> for AbilityBarSystem {
 
         for ui_event in events.read(&mut self.reader_id) {
             if ui_event.event_type == UiEventType::Click {
-                for (i, ability) in abilities.current_abilities.iter_mut().enumerate() {
+                for (i, ability) in abilities.available_abilities.iter_mut().enumerate() {
                     let button = ability
                         .current_state
                         .ui_button

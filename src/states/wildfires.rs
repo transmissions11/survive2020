@@ -4,7 +4,9 @@ use crate::states::{
     run_systems, LevelTitle,
 };
 
-use crate::resources::abilities::{Abilities, Ability, AbilityInfo, AbilityState, AbilityType};
+use crate::resources::abilities::{
+    AbilitiesResource, Ability, AbilityInfo, AbilityState, AbilityType,
+};
 use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent, ProgressBar};
 use crate::systems::wildfires::WildfiresSystem;
 
@@ -35,17 +37,16 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
         init_abilities_bar(
             world,
-            Abilities {
-                current_abilities: vec![Ability {
-                    info: AbilityInfo {
-                        ability_type: AbilityType::Vaccine,
-                        speed: 10,
-                        icon: None,
-                        max_uses: Some(5),
-                    },
-                    current_state: AbilityState::start_on_cooldown(),
-                }],
-            },
+            AbilitiesResource::new(vec![Ability {
+                info: AbilityInfo {
+                    ability_type: AbilityType::Vaccine,
+                    seconds_to_charge: 5,
+                    duration: Some(5),
+                    icon: None,
+                    max_uses: Some(5),
+                },
+                current_state: AbilityState::start_on_cooldown(),
+            }]),
         );
     }
 
