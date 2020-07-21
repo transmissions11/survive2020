@@ -1,0 +1,241 @@
+use crate::resources::abilities::Abilities;
+use crate::states::{delete_all_entities_with_component, load_sprite};
+use amethyst::core::ecs::{Component, DenseVecStorage, VecStorage, World};
+use amethyst::core::shrev::EventChannel;
+use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEvent, UiEventType, UiImage, UiTransform};
+use amethyst::window::ScreenDimensions;
+use amethyst::{core::timing::Time, derive::SystemDesc, ecs::prelude::*};
+
+pub const ABILITY_FRAME_HEIGHT_AND_WITH: f32 = 52.;
+pub const PROGRESS_BAR_MAX_WIDTH: f32 = 47.;
+pub const PROGRESS_BAR_HEIGHT: f32 = 7.;
+/// The extra spacing between ability frames.
+pub const ABILITY_FRAME_SPACING: f32 = 10.;
+
+#[derive(Default)]
+pub struct ProgressBar {
+    pub ability_index: usize,
+    pub x_offset: f32,
+}
+impl Component for ProgressBar {
+    type Storage = DenseVecStorage<Self>;
+}
+
+#[derive(Default)]
+/// Used to tag any entities apart of the ability bar.
+pub struct AbilityBarComponent;
+impl Component for AbilityBarComponent {
+    type Storage = VecStorage<Self>;
+}
+
+/// Creates an ability bar based off of a vector of abilities. Updates the Abilities resource with the new abilities.
+pub fn init_abilities_bar(world: &mut World, mut abilities: Abilities) {
+    // Delete past ability bar
+    delete_all_entities_with_component::<AbilityBarComponent>(world);
+
+    let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
+
+    let mut base_offset = 0.0;
+
+    while base_offset
+        != dimensions.width()
+            - (((abilities.current_abilities.len() - 1) as f32
+                * (ABILITY_FRAME_HEIGHT_AND_WITH + ABILITY_FRAME_SPACING))
+                + base_offset)
+    {
+        base_offset += 1.0;
+    }
+
+    for (i, ability) in abilities.current_abilities.iter_mut().enumerate() {
+        ability.current_state.ui_button = Some(create_ability_item(
+            world,
+            base_offset + ((ABILITY_FRAME_HEIGHT_AND_WITH + ABILITY_FRAME_SPACING) * i as f32),
+            i,
+        ));
+    }
+
+    // insert() overrides if already exists.
+    world.insert(abilities);
+}
+
+/// Creates a UI transform for a progress bar.
+pub fn create_progress_bar_transform(
+    x_padding: f32,
+    percent: f32,
+    arena_height: f32,
+) -> UiTransform {
+    UiTransform::new(
+        percent.to_string(),
+        Anchor::BottomLeft,
+        Anchor::MiddleLeft,
+        x_padding - (0.5 * PROGRESS_BAR_MAX_WIDTH),
+        (arena_height * 0.1) - ABILITY_FRAME_HEIGHT_AND_WITH / 2.5,
+        0.,
+        PROGRESS_BAR_MAX_WIDTH * percent,
+        PROGRESS_BAR_HEIGHT,
+    )
+}
+
+/// Creates an ability item button at the padding location with the associated index.
+pub fn create_ability_item(world: &mut World, x_padding: f32, index: usize) -> UiButton {
+    let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
+
+    let ability_frame = load_sprite(world, "ability_frame.png", 0);
+    let selected_ability_frame = load_sprite(world, "selected_ability_frame.png", 0);
+    let tapped_ability_frame = load_sprite(world, "tapped_ability_frame.png", 0);
+
+    let progress_bar = load_sprite(world, "progress_bar.png", 0);
+
+    world
+        .create_entity()
+        .with(UiImage::Sprite(progress_bar))
+        .with(create_progress_bar_transform(
+            x_padding,
+            1.0,
+            dimensions.height(),
+        ))
+        .with(ProgressBar {
+            ability_index: index,
+            x_offset: x_padding,
+        })
+        .with(AbilityBarComponent)
+        .build();
+
+    let button_parent = world.create_entity().with(AbilityBarComponent).build();
+
+    let (_id, button) = UiButtonBuilder::<(), u32>::new(String::new())
+        .with_anchor(Anchor::BottomLeft)
+        .with_position(x_padding, dimensions.height() * 0.1)
+        .with_size(52., 52.)
+        .with_image(UiImage::Sprite(ability_frame))
+        .with_hover_image(UiImage::Sprite(selected_ability_frame))
+        .with_press_image(UiImage::Sprite(tapped_ability_frame))
+        .with_parent(button_parent)
+        .build_from_world(&world);
+
+    button
+}
+
+/// Updates a progress bar and the ability at the index.
+pub fn update_progress_bar(
+    progress_bar: &ProgressBar,
+    transform: &mut UiTransform,
+    abilities: &mut Abilities,
+    time: &Time,
+    arena_height: f32,
+) {
+    let ability = &mut abilities.current_abilities[progress_bar.ability_index];
+
+    let mut new_percentage = ability.current_state.percentage
+        + (time.delta_seconds() / (11 - ability.info.speed) as f32);
+
+    if new_percentage > 1.0 {
+        new_percentage = 1.0;
+    }
+
+    // If the ability has a max use set
+    if let Some(max_uses) = ability.info.max_uses {
+        // If this ability has already been used up
+        if ability.current_state.uses >= max_uses {
+            // Set the charge percentage to 0
+            new_percentage = 0.0;
+        }
+    }
+
+    ability.current_state.percentage = new_percentage;
+
+    *transform = create_progress_bar_transform(progress_bar.x_offset, new_percentage, arena_height);
+}
+
+/// Runs ability specific logic if ability is off cooldown. Sets ability percentage to 0.
+pub fn use_ability(
+    progress_bar: &ProgressBar,
+    transform: &mut UiTransform,
+    abilities: &mut Abilities,
+
+    arena_height: f32,
+) {
+    let ability = &mut abilities.current_abilities[progress_bar.ability_index];
+
+    // If ability is off cooldown
+    if ability.current_state.percentage == 1.0 {
+        // Set the charge percentage to 0
+        {
+            ability.current_state.percentage = 0.0;
+            ability.current_state.uses += 1;
+            *transform = create_progress_bar_transform(progress_bar.x_offset, 0.0, arena_height);
+        }
+
+        //TODO: Do specific logic based on what type of ability this is
+        match ability.info.ability_type {
+            _ => (),
+        };
+    }
+}
+
+#[derive(SystemDesc)]
+#[system_desc(name(AbilityBarSystemDesc))]
+pub struct AbilityBarSystem {
+    #[system_desc(event_channel_reader)]
+    reader_id: ReaderId<UiEvent>,
+}
+
+impl AbilityBarSystem {
+    pub fn new(reader_id: ReaderId<UiEvent>) -> Self {
+        Self { reader_id }
+    }
+}
+
+impl<'s> System<'s> for AbilityBarSystem {
+    type SystemData = (
+        Read<'s, EventChannel<UiEvent>>,
+        ReadStorage<'s, ProgressBar>,
+        WriteStorage<'s, UiTransform>,
+        Read<'s, Time>,
+        ReadExpect<'s, ScreenDimensions>,
+        WriteExpect<'s, Abilities>,
+    );
+
+    fn run(
+        &mut self,
+        (events, progress_bars, mut transforms, time, dimensions, mut abilities): Self::SystemData,
+    ) {
+        let mut clicked_abilities: Vec<usize> = Vec::new();
+
+        for ui_event in events.read(&mut self.reader_id) {
+            if ui_event.event_type == UiEventType::Click {
+                for (i, ability) in abilities.current_abilities.iter_mut().enumerate() {
+                    let button = ability
+                        .current_state
+                        .ui_button
+                        .as_ref()
+                        .unwrap()
+                        .image_entity;
+
+                    if ui_event.target == button {
+                        clicked_abilities.push(i);
+                    }
+                }
+            }
+        }
+
+        for (progress_bar, transform) in (&progress_bars, &mut transforms).join() {
+            if clicked_abilities.contains(&progress_bar.ability_index) {
+                use_ability(
+                    progress_bar,
+                    transform,
+                    &mut *abilities,
+                    dimensions.height(),
+                );
+            } else {
+                update_progress_bar(
+                    progress_bar,
+                    transform,
+                    &mut *abilities,
+                    &*time,
+                    dimensions.height(),
+                );
+            }
+        }
+    }
+}

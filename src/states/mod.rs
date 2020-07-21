@@ -102,16 +102,14 @@ pub fn delete_all_entities_with_component<T: Component>(world: &mut World) {
     }
 }
 
-/// Pushes to a new level when the Z key is pressed and pops when the X key is pressed.
-pub fn push_to_level_on_key(
+/// Pushes to next level when the Z key is pressed.
+pub fn push_to_next_level_on_key(
     event: StateEvent,
     new_state: impl SimpleState + 'static,
 ) -> SimpleTrans {
     if let StateEvent::Window(event) = &event {
         if is_key_down(event, VirtualKeyCode::Z) {
             Trans::Push(Box::new(new_state))
-        } else if is_key_down(event, VirtualKeyCode::X) {
-            Trans::Pop
         } else {
             Trans::None
         }

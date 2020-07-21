@@ -4,9 +4,12 @@ version = "0.1.0"
 authors = ["t11s <greenfeatherhelp@gmail.com>"]
 edition = "2018"
 
-[dependencies]
-amethyst = "0.15.0"
-log = { version = "0.4.8", features = ["serde"] }
+[dependencies.amethyst]
+version = "0.15"
+git = "https://github.com/amethyst/amethyst"
+rev = "2535a065fb34234a1e5b74c4da5717d1dcdce6ca"
+default-features = false
+features = ["metal", "audio"]
 
 [features]
 default = ["metal"]

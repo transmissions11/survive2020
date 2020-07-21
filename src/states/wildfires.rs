@@ -1,10 +1,13 @@
 use crate::states::hornets::HornetState;
 use crate::states::{
-    create_optional_systems_dispatcher, init_camera, init_level_title, push_to_level_on_key,
+    create_optional_systems_dispatcher, init_camera, init_level_title, push_to_next_level_on_key,
     run_systems, LevelTitle,
 };
 
+use crate::resources::abilities::{Abilities, Ability, AbilityInfo, AbilityState, AbilityType};
+use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent, ProgressBar};
 use crate::systems::wildfires::WildfiresSystem;
+
 use amethyst::prelude::*;
 use amethyst::shred::Dispatcher;
 
@@ -21,16 +24,29 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
             builder.add(WildfiresSystem, "wildfires", &[])
         });
 
-        // Register the LevelTitle component as we won't use this in any systems
+        // Register the components we won't use this in any systems
         world.register::<LevelTitle>();
+        world.register::<AbilityBarComponent>();
+        world.register::<ProgressBar>();
 
         init_camera(world);
 
         init_level_title(world, "wildfires_title.png");
-    }
 
-    fn on_resume(&mut self, data: StateData<'_, GameData<'_, '_>>) {
-        init_level_title(data.world, "wildfires_title.png");
+        init_abilities_bar(
+            world,
+            Abilities {
+                current_abilities: vec![Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::Vaccine,
+                        speed: 10,
+                        icon: None,
+                        max_uses: Some(5),
+                    },
+                    current_state: AbilityState::start_on_cooldown(),
+                }],
+            },
+        );
     }
 
     fn handle_event(
@@ -38,7 +54,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         mut _data: StateData<'_, GameData<'_, '_>>,
         event: StateEvent,
     ) -> SimpleTrans {
-        push_to_level_on_key(event, HornetState::default())
+        push_to_next_level_on_key(event, HornetState::default())
     }
 
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
