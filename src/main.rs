@@ -1,4 +1,3 @@
-use crate::systems::ability_bar::AbilityBarSystemDesc;
 use amethyst::input::{InputBundle, StringBindings};
 use amethyst::renderer::RenderFlat2D;
 use amethyst::{
@@ -8,10 +7,8 @@ use amethyst::{
     ui::{RenderUi, UiBundle},
     utils::application_root_dir,
 };
-
-mod resources;
-mod states;
-mod systems;
+use survive2020::states::wildfires::WildfireState;
+use survive2020::systems::ability_bar::AbilityBarSystemDesc;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -35,11 +32,7 @@ fn main() -> amethyst::Result<()> {
                 .with_plugin(RenderUi::default()),
         )?;
 
-    let mut game = Application::new(
-        resources,
-        states::wildfires::WildfireState::default(),
-        game_data,
-    )?;
+    let mut game = Application::new(resources, WildfireState::default(), game_data)?;
     game.run();
 
     Ok(())
