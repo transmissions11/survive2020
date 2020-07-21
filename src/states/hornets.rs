@@ -1,6 +1,4 @@
-use crate::states::{
-    create_optional_systems_dispatcher, init_level_title, push_to_next_level_on_key, run_systems,
-};
+use crate::states::{create_optional_systems_dispatcher, init_level_title, run_systems};
 
 use amethyst::{ecs::Dispatcher, prelude::*};
 
