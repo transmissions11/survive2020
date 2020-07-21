@@ -35,7 +35,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
         init_level_title(world, "wildfires_title.png");
 
-        load_sprite(world, "vaccine_ability.png", 0);
+        let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
 
         init_abilities_bar(
             world,
@@ -44,8 +44,8 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
                     ability_type: AbilityType::Vaccine,
                     seconds_to_charge: 1,
                     duration: Some(2),
-                    icon: String::from("vaccine_ability.png"),
-                    max_uses: Some(3),
+                    icon: vaccine_sprite,
+                    max_uses: Some(5),
                 },
                 current_state: AbilityState::start_on_cooldown(),
             }]),

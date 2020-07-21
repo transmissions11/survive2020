@@ -1,3 +1,4 @@
+use amethyst::renderer::SpriteRender;
 use amethyst::ui::UiButton;
 
 /// All available abilities and all active abilities.
@@ -39,8 +40,8 @@ pub struct AbilityInfo {
     pub duration: Option<u32>,
     /// The type of ability.
     pub ability_type: AbilityType,
-    /// The filename of the icon to be displayed as the ability. (Ends in .png or .jpg, etc)
-    pub icon: String,
+    /// The icon to be shown for this ability.
+    pub icon: SpriteRender,
     /// The maximum amount of times this ability can be used.
     pub max_uses: Option<u32>,
 }

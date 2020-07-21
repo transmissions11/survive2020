@@ -3,7 +3,7 @@ use crate::states::{delete_all_entities_with_component, load_sprite};
 use amethyst::core::ecs::{Component, DenseVecStorage, VecStorage, World};
 use amethyst::core::shrev::EventChannel;
 use amethyst::core::Transform;
-
+use amethyst::renderer::SpriteRender;
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEvent, UiEventType, UiImage, UiTransform};
 use amethyst::window::ScreenDimensions;
 use amethyst::{core::timing::Time, derive::SystemDesc, ecs::prelude::*};
@@ -65,7 +65,7 @@ pub fn init_abilities_bar(world: &mut World, mut abilities: AbilitiesResource) {
     for (i, ability) in abilities.available_abilities.iter_mut().enumerate() {
         ability.current_state.ui_button = Some(create_ability_item(
             world,
-            &ability.info.icon,
+            ability.info.icon.clone(),
             base_offset + ((ABILITY_FRAME_HEIGHT_AND_WITH + ABILITY_FRAME_SPACING) * i as f32),
             i,
         ));
@@ -96,7 +96,7 @@ pub fn create_progress_bar_transform(
 /// Creates an ability item button at the padding location with the associated index.
 pub fn create_ability_item(
     world: &mut World,
-    icon: &String,
+    icon: SpriteRender,
     x_padding: f32,
     index: usize,
 ) -> UiButton {
@@ -143,12 +143,10 @@ pub fn create_ability_item(
         0.0,
     );
 
-    let loaded_icon = load_sprite(world, icon.as_str(), 0);
-
     world
         .create_entity()
         .with(icon_transform)
-        .with(loaded_icon)
+        .with(icon)
         .build();
 
     button

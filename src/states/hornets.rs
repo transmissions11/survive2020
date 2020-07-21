@@ -1,4 +1,6 @@
-use crate::states::{create_optional_systems_dispatcher, init_level_title, run_systems};
+use crate::states::{
+    create_optional_systems_dispatcher, init_level_title, load_sprite, run_systems,
+};
 
 use amethyst::{ecs::Dispatcher, prelude::*};
 
@@ -18,6 +20,8 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
+        let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
+
         self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
             builder.add(HornetsSystem, "hornets", &[])
         });
@@ -32,7 +36,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                         ability_type: AbilityType::Vaccine,
                         seconds_to_charge: 1,
                         duration: None,
-                        icon: String::from("vaccine_ability.png"),
+                        icon: vaccine_sprite.clone(),
                         max_uses: None,
                     },
                     current_state: AbilityState::default(),
@@ -42,7 +46,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                         ability_type: AbilityType::Vaccine,
                         seconds_to_charge: 2,
                         duration: None,
-                        icon: String::from("vaccine_ability.png"),
+                        icon: vaccine_sprite.clone(),
                         max_uses: None,
                     },
                     current_state: AbilityState::default(),
@@ -52,7 +56,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                         ability_type: AbilityType::Vaccine,
                         seconds_to_charge: 4,
                         duration: None,
-                        icon: String::from("vaccine_ability.png"),
+                        icon: vaccine_sprite,
                         max_uses: None,
                     },
                     current_state: AbilityState::default(),
