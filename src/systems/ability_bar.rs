@@ -147,6 +147,7 @@ pub fn create_ability_item(
         .create_entity()
         .with(icon_transform)
         .with(icon)
+        .with(AbilityBarComponent)
         .build();
 
     button
