@@ -4,7 +4,8 @@ pub mod systems;
 
 use crate::states::main_menu::MainMenuState;
 use amethyst::input::{is_key_down, VirtualKeyCode};
-use amethyst::ui::{FontHandle, TtfFormat};
+use amethyst::renderer::palette::Srgba;
+use amethyst::ui::{FontHandle, TtfFormat, UiImage};
 use amethyst::{
     assets::{AssetStorage, Loader},
     core::transform::Transform,
@@ -178,4 +179,15 @@ pub fn init_camera(world: &mut World) {
         .with(Camera::standard_2d(dimensions.width(), dimensions.height()))
         .with(transform)
         .build();
+}
+
+/// Creates a UiImage::SolidColor from rgba.
+/// r, g, b should be max 255
+/// a should be 0.0 - 1.0
+pub fn create_ui_color_from_rgba(r: u32, g: u32, b: u32, a: f32) -> UiImage {
+    let (r, g, b, a) = Srgba::new(r as f32 / 255., g as f32 / 255., b as f32 / 255., a)
+        .into_linear()
+        .into_components();
+
+    UiImage::SolidColor([r, g, b, a])
 }

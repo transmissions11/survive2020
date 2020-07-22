@@ -4,7 +4,8 @@ use crate::states::hornets::HornetState;
 use crate::states::wildfires::WildfireState;
 use crate::systems::ability_bar::AbilityBarComponent;
 use crate::*;
-use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType, UiImage};
+
+use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]
 pub struct MainMenuState {
@@ -24,8 +25,9 @@ pub fn create_level_button_with_highscore(
 
     let height = 64.0;
 
-    let color = UiImage::SolidColor([0.8, 0.6, 0.3, 1.0]);
-    let hover_color = UiImage::SolidColor([0.8, 0.6, 0.3, 0.5]);
+    let color = create_ui_color_from_rgba(195, 130, 51, 1.0);
+    let hover_color = create_ui_color_from_rgba(195, 130, 51, 0.5);
+    let alt_color = create_ui_color_from_rgba(243, 180, 73, 1.0);
 
     let font = load_font(world, "main_font.ttf");
 
@@ -45,7 +47,7 @@ pub fn create_level_button_with_highscore(
         .with_position(((dimensions.width() * -0.4) / 2.0) - 2.5, y_spacing)
         .with_size((dimensions.width() * 0.4) - 15.0, height)
         .with_anchor(Anchor::TopRight)
-        .with_image(color)
+        .with_image(alt_color)
         .build_from_world(&world);
 
     (button, high_score)
