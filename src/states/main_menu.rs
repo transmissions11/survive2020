@@ -1,5 +1,4 @@
-use amethyst::prelude::*;
-
+use crate::resources::high_scores::highscores_keys::{HORNETS, WILDFIRES};
 use crate::resources::high_scores::load_scores;
 use crate::states::hornets::HornetState;
 use crate::states::wildfires::WildfireState;
@@ -92,13 +91,13 @@ impl SimpleState for MainMenuState {
             world,
             "Wildfires",
             1,
-            high_scores.wildfires_high_score,
+            high_scores.get_score(WILDFIRES),
         ));
         self.hornets_and_highscore_button = Some(create_level_button_with_highscore(
             world,
             "Murder Hornets",
             2,
-            high_scores.hornets_high_score,
+            high_scores.get_score(HORNETS),
         ));
 
         world.insert(high_scores);
