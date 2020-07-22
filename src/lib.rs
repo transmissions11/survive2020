@@ -2,26 +2,16 @@ pub mod resources;
 pub mod states;
 pub mod systems;
 
-use crate::states::main_menu::MainMenuState;
-use amethyst::input::{is_key_down, VirtualKeyCode};
 use amethyst::renderer::palette::Srgba;
 use amethyst::ui::{FontHandle, TtfFormat, UiImage};
 use amethyst::{
     assets::{AssetStorage, Loader},
-    core::transform::Transform,
-    core::ArcThreadPool,
     ecs::prelude::Join,
-    ecs::{Component, DenseVecStorage, Dispatcher, DispatcherBuilder},
+    ecs::Component,
     prelude::*,
-    renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
+    renderer::{ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
     window::ScreenDimensions,
 };
-
-#[derive(Debug)]
-pub struct LevelTitle;
-impl Component for LevelTitle {
-    type Storage = DenseVecStorage<Self>;
-}
 
 /// Load a font from a file. Returns a FontHandle.
 /// Will panic if the filename does not end with ".ttf".
@@ -82,26 +72,6 @@ pub fn load_sprite(world: &mut World, filename: &str, sprite_number: usize) -> S
     }
 }
 
-/// Displays the level title at the top of the screen.
-pub fn init_level_title(world: &mut World, filename: &str) {
-    // Delete previous titles
-    delete_all_entities_with_component::<LevelTitle>(world);
-
-    let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
-
-    let sprite = load_sprite(world, filename, 0);
-
-    let mut transform = Transform::default();
-    transform.set_translation_xyz(dimensions.width() * 0.5, dimensions.height() * 0.9, 0.);
-
-    world
-        .create_entity()
-        .with(LevelTitle)
-        .with(transform)
-        .with(sprite)
-        .build();
-}
-
 /// Deletes all entities with the associated component.
 pub fn delete_all_entities_with_component<T: Component>(world: &mut World) {
     let to_delete = {
@@ -122,63 +92,11 @@ pub fn delete_all_entities_with_component<T: Component>(world: &mut World) {
     }
 }
 
-/// Return to main menu on escape.
-pub fn return_to_main_menu_on_escape(event: StateEvent) -> SimpleTrans {
-    if let StateEvent::Window(event) = &event {
-        if is_key_down(event, VirtualKeyCode::Escape) {
-            Trans::Replace(Box::new(MainMenuState::default()))
-        } else {
-            Trans::None
-        }
-    } else {
-        Trans::None
-    }
-}
+/// Gets the main font from a resource.
+pub fn get_main_font(world: &mut World) -> FontHandle {
+    let font = world.read_resource::<FontHandle>();
 
-/// Creates a systems dispatcher. Takes a closure where the caller adds systems.
-pub fn create_systems_dispatcher<'a, 'b>(
-    world: &mut World,
-    add_systems: impl FnOnce(&mut DispatcherBuilder),
-) -> Dispatcher<'a, 'b> {
-    let mut builder = DispatcherBuilder::new();
-
-    add_systems(&mut builder);
-
-    let mut dispatcher = builder
-        .with_pool((*world.read_resource::<ArcThreadPool>()).clone())
-        .build();
-    dispatcher.setup(world);
-
-    dispatcher
-}
-
-/// Creates a systems dispatcher. Takes a closure where the caller adds systems. Returns a Some(DispatchBuilder).
-pub fn create_optional_systems_dispatcher<'a, 'b>(
-    world: &mut World,
-    add_systems: impl FnOnce(&mut DispatcherBuilder),
-) -> Option<Dispatcher<'a, 'b>> {
-    Some(create_systems_dispatcher(world, add_systems))
-}
-
-/// Take's a state's dispatcher and if it exists, runs all of its systems.
-pub fn run_systems(world: &World, dispatcher: &mut Option<Dispatcher>) {
-    if let Some(dispatcher) = dispatcher.as_mut() {
-        dispatcher.dispatch(world);
-    }
-}
-
-/// Creates the 2D camera.
-pub fn init_camera(world: &mut World) {
-    let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
-
-    let mut transform = Transform::default();
-    transform.set_translation_xyz(dimensions.width() * 0.5, dimensions.height() * 0.5, 1.);
-
-    world
-        .create_entity()
-        .with(Camera::standard_2d(dimensions.width(), dimensions.height()))
-        .with(transform)
-        .build();
+    (*font).clone()
 }
 
 /// Creates a UiImage::SolidColor from rgba.

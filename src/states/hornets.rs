@@ -6,6 +6,10 @@ use crate::systems::hornets::HornetsSystem;
 use crate::resources::abilities::{
     AbilitiesResource, Ability, AbilityInfo, AbilityState, AbilityType,
 };
+use crate::states::{
+    create_optional_systems_dispatcher, init_level_title, return_to_main_menu_on_escape,
+    run_systems,
+};
 use crate::*;
 
 #[derive(Default)]
@@ -17,15 +21,10 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
-            builder.add(HornetsSystem, "hornets", &[])
-        });
-
         init_level_title(world, "hornets_title.png");
 
         let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
         let swatter_sprite = load_sprite(world, "swatter_ability.png", 0);
-
         init_abilities_bar(
             world,
             AbilitiesResource::new(vec![
@@ -51,6 +50,10 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                 },
             ]),
         );
+
+        self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
+            builder.add(HornetsSystem, "hornets", &[])
+        });
     }
 
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {

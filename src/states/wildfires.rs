@@ -7,8 +7,11 @@ use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent};
 use crate::systems::wildfires::WildfiresSystem;
 
 use crate::resources::high_scores::highscores_keys::WILDFIRES;
-use crate::resources::high_scores::update_high_score_if_greater;
-use amethyst::core::Time;
+
+use crate::states::{
+    create_optional_systems_dispatcher, init_level_title, init_timer_text,
+    return_to_main_menu_on_escape, update_timer_and_set_high_score, TimerComponent,
+};
 use amethyst::shred::Dispatcher;
 
 pub const MAX_SECONDS: f32 = 10.0;
@@ -24,14 +27,11 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
-            builder.add(WildfiresSystem, "wildfires", &[])
-        });
-
         init_level_title(world, "wildfires_title.png");
 
-        let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
+        init_timer_text(world, MAX_SECONDS);
 
+        let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
         init_abilities_bar(
             world,
             AbilitiesResource::new(vec![Ability {
@@ -45,10 +45,15 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
                 current_state: AbilityState::start_on_cooldown(),
             }]),
         );
+
+        self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
+            builder.add(WildfiresSystem, "wildfires", &[])
+        });
     }
 
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         delete_all_entities_with_component::<AbilityBarComponent>(data.world);
+        delete_all_entities_with_component::<TimerComponent>(data.world);
     }
 
     fn handle_event(
@@ -62,17 +67,12 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         let world = &mut data.world;
 
-        self.seconds_elapsed += world.read_resource::<Time>().delta_seconds();
-
-        if self.seconds_elapsed >= MAX_SECONDS {
-            //TODO: actually change the score.
-            self.score = 1000;
-
-            update_high_score_if_greater(*world, WILDFIRES, self.score);
-
-            Trans::Replace(Box::new(MainMenuState::default()))
-        } else {
-            Trans::None
-        }
+        update_timer_and_set_high_score(
+            *world,
+            &mut self.seconds_elapsed,
+            MAX_SECONDS,
+            self.score,
+            WILDFIRES,
+        )
     }
 }

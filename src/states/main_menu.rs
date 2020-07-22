@@ -5,6 +5,7 @@ use crate::states::wildfires::WildfireState;
 use crate::systems::ability_bar::AbilityBarComponent;
 use crate::*;
 
+use crate::states::{init_camera, init_level_title, LevelTitle, TimerComponent};
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]
@@ -13,7 +14,10 @@ pub struct MainMenuState {
     wildfires_and_highscore_button: Option<(UiButton, UiButton)>,
 }
 
-pub fn create_level_button_with_highscore(
+/// Creates a button for a level and displays that level's highscore.
+/// Vertical padding determined by level number.
+/// Level number should be >0
+fn create_level_button_with_highscore(
     world: &mut World,
     title: &str,
     level_number: u32,
@@ -29,7 +33,7 @@ pub fn create_level_button_with_highscore(
     let hover_color = create_ui_color_from_rgba(195, 130, 51, 0.5);
     let alt_color = create_ui_color_from_rgba(243, 180, 73, 1.0);
 
-    let font = load_font(world, "main_font.ttf");
+    let font = get_main_font(world);
 
     let (_, button) = UiButtonBuilder::<(), u32>::new(format!("Level {}: {}", level_number, title))
         .with_font(font.clone())
@@ -53,10 +57,8 @@ pub fn create_level_button_with_highscore(
     (button, high_score)
 }
 
-pub fn delete_level_and_highscore_buttons(
-    world: &mut World,
-    buttons: &Option<(UiButton, UiButton)>,
-) {
+/// Deletes level and highscore buttons passed in.
+fn delete_level_and_highscore_buttons(world: &mut World, buttons: &Option<(UiButton, UiButton)>) {
     // Delete level button
     world
         .entities()
@@ -83,14 +85,19 @@ impl SimpleState for MainMenuState {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        // Init 2d camera
-        init_camera(world);
-
         // Register the components we won't use in any systems
         world.register::<LevelTitle>();
         world.register::<AbilityBarComponent>();
+        world.register::<TimerComponent>();
 
+        // Init 2d camera
+        init_camera(world);
+
+        // Init level title
         init_level_title(world, "logo.png");
+
+        let font = load_font(world, "main_font.ttf");
+        world.insert(font);
 
         let high_scores = load_scores();
 
