@@ -25,6 +25,7 @@ pub fn create_level_button_with_highscore(
     let height = 64.0;
 
     let color = UiImage::SolidColor([0.8, 0.6, 0.3, 1.0]);
+    let hover_color = UiImage::SolidColor([0.8, 0.6, 0.3, 0.5]);
 
     let font = load_font(world, "main_font.ttf");
 
@@ -35,7 +36,7 @@ pub fn create_level_button_with_highscore(
         .with_size((dimensions.width() * 0.6) - 15.0, height)
         .with_anchor(Anchor::TopLeft)
         .with_image(color.clone())
-        .with_hover_image(UiImage::SolidColor([0.8, 0.6, 0.3, 0.5]))
+        .with_hover_image(hover_color)
         .build_from_world(&world);
 
     let (_, high_score) = UiButtonBuilder::<(), u32>::new(format!("High Score: {}", high_score))
