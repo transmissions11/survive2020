@@ -48,7 +48,6 @@ pub fn update_timer_and_set_high_score(
 
     let timer_entity = {
         if time_changed_by_a_second || level_is_over {
-            println!("running!");
             let mut ui_texts = world.write_storage::<UiText>();
             let timer_components = world.read_storage::<TimerComponent>();
             let entities = world.entities();
