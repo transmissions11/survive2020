@@ -1,6 +1,6 @@
 use amethyst::{ecs::Dispatcher, prelude::*};
 
-use crate::systems::ability_bar::init_abilities_bar;
+use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent};
 use crate::systems::hornets::HornetsSystem;
 
 use crate::resources::abilities::{
@@ -53,13 +53,17 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
         );
     }
 
-    // fn handle_event(
-    //     &mut self,
-    //     mut _data: StateData<'_, GameData<'_, '_>>,
-    //     event: StateEvent,
-    // ) -> SimpleTrans {
-    //     push_to_next_level_on_key(event, TODO::default())
-    // }
+    fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        delete_all_entities_with_component::<AbilityBarComponent>(data.world);
+    }
+
+    fn handle_event(
+        &mut self,
+        _data: StateData<'_, GameData<'_, '_>>,
+        event: StateEvent,
+    ) -> SimpleTrans {
+        return_to_main_menu_on_escape(event)
+    }
 
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         run_systems(data.world, &mut self.dispatcher);

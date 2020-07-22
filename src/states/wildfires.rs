@@ -1,10 +1,9 @@
-use crate::states::hornets::HornetState;
 use crate::*;
 
 use crate::resources::abilities::{
     AbilitiesResource, Ability, AbilityInfo, AbilityState, AbilityType,
 };
-use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent, ProgressBar};
+use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent};
 use crate::systems::wildfires::WildfiresSystem;
 
 use amethyst::prelude::*;
@@ -22,13 +21,6 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
             builder.add(WildfiresSystem, "wildfires", &[])
         });
-
-        // Register the components we won't use this in any systems
-        world.register::<LevelTitle>();
-        world.register::<AbilityBarComponent>();
-        world.register::<ProgressBar>();
-
-        init_camera(world);
 
         init_level_title(world, "wildfires_title.png");
 
@@ -49,17 +41,21 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         );
     }
 
-    fn handle_event(
-        &mut self,
-        mut _data: StateData<'_, GameData<'_, '_>>,
-        event: StateEvent,
-    ) -> SimpleTrans {
-        push_to_next_level_on_key(event, HornetState::default())
+    fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
+        delete_all_entities_with_component::<AbilityBarComponent>(data.world);
     }
 
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         run_systems(data.world, &mut self.dispatcher);
 
         Trans::None
+    }
+
+    fn handle_event(
+        &mut self,
+        _data: StateData<'_, GameData<'_, '_>>,
+        event: StateEvent,
+    ) -> SimpleTrans {
+        return_to_main_menu_on_escape(event)
     }
 }

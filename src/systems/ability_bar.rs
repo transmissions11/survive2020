@@ -264,48 +264,50 @@ impl<'s> System<'s> for AbilityBarSystem {
         WriteStorage<'s, UiTransform>,
         Read<'s, Time>,
         ReadExpect<'s, ScreenDimensions>,
-        WriteExpect<'s, AbilitiesResource>,
+        Option<Write<'s, AbilitiesResource>>,
     );
 
     fn run(
         &mut self,
-        (events, progress_bars, mut transforms, time, dimensions, mut abilities): Self::SystemData,
+        (events, progress_bars, mut transforms, time, dimensions, abilities): Self::SystemData,
     ) {
-        let mut clicked_abilities: Vec<usize> = Vec::new();
+        if let Some(mut abilities) = abilities {
+            let mut clicked_abilities: Vec<usize> = Vec::new();
 
-        for ui_event in events.read(&mut self.reader_id) {
-            if ui_event.event_type == UiEventType::Click {
-                for (i, ability) in abilities.available_abilities.iter_mut().enumerate() {
-                    let button = ability
-                        .current_state
-                        .ui_button
-                        .as_ref()
-                        .unwrap()
-                        .image_entity;
+            for ui_event in events.read(&mut self.reader_id) {
+                if ui_event.event_type == UiEventType::Click {
+                    for (i, ability) in abilities.available_abilities.iter_mut().enumerate() {
+                        let button = ability
+                            .current_state
+                            .ui_button
+                            .as_ref()
+                            .unwrap()
+                            .image_entity;
 
-                    if ui_event.target == button {
-                        clicked_abilities.push(i);
+                        if ui_event.target == button {
+                            clicked_abilities.push(i);
+                        }
                     }
                 }
             }
-        }
 
-        for (progress_bar, transform) in (&progress_bars, &mut transforms).join() {
-            if clicked_abilities.contains(&progress_bar.ability_index) {
-                use_ability(
-                    progress_bar,
-                    transform,
-                    &mut *abilities,
-                    dimensions.height(),
-                );
-            } else {
-                update_progress_bar(
-                    progress_bar,
-                    transform,
-                    &mut *abilities,
-                    &*time,
-                    dimensions.height(),
-                );
+            for (progress_bar, transform) in (&progress_bars, &mut transforms).join() {
+                if clicked_abilities.contains(&progress_bar.ability_index) {
+                    use_ability(
+                        progress_bar,
+                        transform,
+                        &mut *abilities,
+                        dimensions.height(),
+                    );
+                } else {
+                    update_progress_bar(
+                        progress_bar,
+                        transform,
+                        &mut *abilities,
+                        &*time,
+                        dimensions.height(),
+                    );
+                }
             }
         }
     }

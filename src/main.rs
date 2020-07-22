@@ -7,7 +7,8 @@ use amethyst::{
     ui::{RenderUi, UiBundle},
     utils::application_root_dir,
 };
-use survive2020::states::wildfires::WildfireState;
+use survive2020::states::main_menu::MainMenuState;
+
 use survive2020::systems::ability_bar::AbilityBarSystemDesc;
 
 fn main() -> amethyst::Result<()> {
@@ -32,7 +33,7 @@ fn main() -> amethyst::Result<()> {
                 .with_plugin(RenderUi::default()),
         )?;
 
-    let mut game = Application::new(resources, WildfireState::default(), game_data)?;
+    let mut game = Application::new(resources, MainMenuState::default(), game_data)?;
     game.run();
 
     Ok(())

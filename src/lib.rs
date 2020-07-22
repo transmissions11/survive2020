@@ -2,13 +2,14 @@ pub mod resources;
 pub mod states;
 pub mod systems;
 
+use crate::states::main_menu::MainMenuState;
+use amethyst::input::{is_key_down, VirtualKeyCode};
 use amethyst::{
     assets::{AssetStorage, Loader},
     core::transform::Transform,
     core::ArcThreadPool,
     ecs::prelude::Join,
     ecs::{Component, DenseVecStorage, Dispatcher, DispatcherBuilder},
-    input::{is_key_down, VirtualKeyCode},
     prelude::*,
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
     window::ScreenDimensions,
@@ -103,14 +104,11 @@ pub fn delete_all_entities_with_component<T: Component>(world: &mut World) {
     }
 }
 
-/// Pushes to next level when the Z key is pressed.
-pub fn push_to_next_level_on_key(
-    event: StateEvent,
-    new_state: impl SimpleState + 'static,
-) -> SimpleTrans {
+/// Return to main menu on escape.
+pub fn return_to_main_menu_on_escape(event: StateEvent) -> SimpleTrans {
     if let StateEvent::Window(event) = &event {
-        if is_key_down(event, VirtualKeyCode::Z) {
-            Trans::Push(Box::new(new_state))
+        if is_key_down(event, VirtualKeyCode::Escape) {
+            Trans::Replace(Box::new(MainMenuState::default()))
         } else {
             Trans::None
         }
