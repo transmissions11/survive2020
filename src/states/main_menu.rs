@@ -21,7 +21,7 @@ pub fn create_level_button_with_highscore(
 ) -> (UiButton, UiButton) {
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 
-    let y_spacing = -156.0 - (level_number as f32 * 75.0);
+    let y_spacing = -80.0 - (level_number as f32 * 75.0);
 
     let height = 64.0;
 
