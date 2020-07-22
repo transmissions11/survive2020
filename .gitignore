@@ -8,3 +8,6 @@ thumbs.db
 *~
 *.rs.bk
 *.swp
+
+# Game save files
+high_scores.txt

@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["t11s <greenfeatherhelp@gmail.com>"]
 edition = "2018"
 
+[dependencies]
+savefile="0.7"
+savefile-derive="0.7"
+
 [dependencies.amethyst]
 version = "0.15"
 git = "https://github.com/amethyst/amethyst"

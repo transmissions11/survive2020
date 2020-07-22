@@ -1,5 +1,6 @@
 use amethyst::prelude::*;
 
+use crate::resources::high_scores::load_scores;
 use crate::states::hornets::HornetState;
 use crate::states::wildfires::WildfireState;
 use crate::systems::ability_bar::AbilityBarComponent;
@@ -8,32 +9,67 @@ use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType, UiImage};
 
 #[derive(Default)]
 pub struct MainMenuState {
-    hornet_button: Option<UiButton>,
-    wildfires_button: Option<UiButton>,
+    hornets_and_highscore_button: Option<(UiButton, UiButton)>,
+    wildfires_and_highscore_button: Option<(UiButton, UiButton)>,
 }
 
-pub fn create_level_button(world: &mut World, title: &str, level_number: u32) -> UiButton {
+pub fn create_level_button_with_highscore(
+    world: &mut World,
+    title: &str,
+    level_number: u32,
+    high_score: u64,
+) -> (UiButton, UiButton) {
+    let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
+
+    let y_spacing = -156.0 - (level_number as f32 * 75.0);
+
+    let height = 64.0;
+
+    let color = UiImage::SolidColor([0.8, 0.6, 0.3, 1.0]);
+
     let (_, button) = UiButtonBuilder::<(), u32>::new(format!("Level {}: {}", level_number, title))
         .with_font_size(32.0)
-        .with_position(0.0, -156.0 - (level_number as f32 * 80.0))
-        .with_size(64.0 * 6.0, 64.0)
-        .with_anchor(Anchor::TopMiddle)
-        .with_image(UiImage::SolidColor([0.8, 0.6, 0.3, 1.0]))
+        .with_position(((dimensions.width() * 0.6) / 2.0) + 2.5, y_spacing)
+        .with_size((dimensions.width() * 0.6) - 15.0, height)
+        .with_anchor(Anchor::TopLeft)
+        .with_image(color.clone())
         .with_hover_image(UiImage::SolidColor([0.8, 0.6, 0.3, 0.5]))
         .build_from_world(&world);
 
-    button
+    let (_, high_score) = UiButtonBuilder::<(), u32>::new(format!("High Score: {}", high_score))
+        .with_font_size(26.0)
+        .with_position(((dimensions.width() * -0.4) / 2.0) - 2.5, y_spacing)
+        .with_size((dimensions.width() * 0.4) - 15.0, height)
+        .with_anchor(Anchor::TopRight)
+        .with_image(color)
+        .build_from_world(&world);
+
+    (button, high_score)
 }
 
-pub fn delete_ui_button(world: &mut World, button: &Option<UiButton>) {
+pub fn delete_level_and_highscore_buttons(
+    world: &mut World,
+    buttons: &Option<(UiButton, UiButton)>,
+) {
+    // Delete level button
     world
         .entities()
-        .delete(button.as_ref().unwrap().image_entity)
+        .delete(buttons.as_ref().unwrap().0.image_entity)
         .expect("Cannot delete UiButton's image entity.");
 
     world
         .entities()
-        .delete(button.as_ref().unwrap().text_entity)
+        .delete(buttons.as_ref().unwrap().0.text_entity)
+        .expect("Cannot delete UiButton's text entity.");
+
+    // Delete high score button
+    world
+        .entities()
+        .delete(buttons.as_ref().unwrap().1.image_entity)
+        .expect("Cannot delete UiButton's image entity.");
+    world
+        .entities()
+        .delete(buttons.as_ref().unwrap().1.text_entity)
         .expect("Cannot delete UiButton's text entity.");
 }
 
@@ -50,15 +86,29 @@ impl SimpleState for MainMenuState {
 
         init_level_title(world, "logo.png");
 
-        self.wildfires_button = Some(create_level_button(world, "Wildfires", 1));
-        self.hornet_button = Some(create_level_button(world, "Murder Hornets", 2));
+        let high_scores = load_scores();
+
+        self.wildfires_and_highscore_button = Some(create_level_button_with_highscore(
+            world,
+            "Wildfires",
+            1,
+            high_scores.wildfires_high_score,
+        ));
+        self.hornets_and_highscore_button = Some(create_level_button_with_highscore(
+            world,
+            "Murder Hornets",
+            2,
+            high_scores.hornets_high_score,
+        ));
+
+        world.insert(high_scores);
     }
 
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        delete_ui_button(world, &self.hornet_button);
-        delete_ui_button(world, &self.wildfires_button);
+        delete_level_and_highscore_buttons(world, &self.hornets_and_highscore_button);
+        delete_level_and_highscore_buttons(world, &self.wildfires_and_highscore_button);
     }
 
     fn handle_event(
@@ -69,8 +119,18 @@ impl SimpleState for MainMenuState {
         match event {
             StateEvent::Ui(ui_event) => {
                 if ui_event.event_type == UiEventType::Click {
-                    let hornets_button = self.hornet_button.as_ref().unwrap().image_entity;
-                    let wildfires_button = self.wildfires_button.as_ref().unwrap().image_entity;
+                    let hornets_button = self
+                        .hornets_and_highscore_button
+                        .as_ref()
+                        .unwrap()
+                        .0
+                        .image_entity;
+                    let wildfires_button = self
+                        .wildfires_and_highscore_button
+                        .as_ref()
+                        .unwrap()
+                        .0
+                        .image_entity;
 
                     if ui_event.target == wildfires_button {
                         Trans::Replace(Box::new(WildfireState::default()))
