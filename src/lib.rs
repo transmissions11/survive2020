@@ -4,6 +4,7 @@ pub mod systems;
 
 use crate::states::main_menu::MainMenuState;
 use amethyst::input::{is_key_down, VirtualKeyCode};
+use amethyst::ui::{FontHandle, TtfFormat};
 use amethyst::{
     assets::{AssetStorage, Loader},
     core::transform::Transform,
@@ -19,6 +20,22 @@ use amethyst::{
 pub struct LevelTitle;
 impl Component for LevelTitle {
     type Storage = DenseVecStorage<Self>;
+}
+
+/// Load a font from a file. Returns a FontHandle.
+/// Will panic if the filename does not end with ".ttf".
+pub fn load_font(world: &mut World, filename: &str) -> FontHandle {
+    assert!(
+        filename.contains(".ttf"),
+        "Font filename must end with .ttf!"
+    );
+
+    world.read_resource::<Loader>().load(
+        format!("fonts/{}", filename),
+        TtfFormat,
+        (),
+        &world.read_resource(),
+    )
 }
 
 /// Load a sprite from a file and sprite number. Returns a SpriteRender.

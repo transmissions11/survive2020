@@ -26,8 +26,11 @@ pub fn create_level_button_with_highscore(
 
     let color = UiImage::SolidColor([0.8, 0.6, 0.3, 1.0]);
 
+    let font = load_font(world, "main_font.ttf");
+
     let (_, button) = UiButtonBuilder::<(), u32>::new(format!("Level {}: {}", level_number, title))
-        .with_font_size(32.0)
+        .with_font(font.clone())
+        .with_font_size(21.5)
         .with_position(((dimensions.width() * 0.6) / 2.0) + 2.5, y_spacing)
         .with_size((dimensions.width() * 0.6) - 15.0, height)
         .with_anchor(Anchor::TopLeft)
@@ -36,7 +39,8 @@ pub fn create_level_button_with_highscore(
         .build_from_world(&world);
 
     let (_, high_score) = UiButtonBuilder::<(), u32>::new(format!("High Score: {}", high_score))
-        .with_font_size(26.0)
+        .with_font_size(18.5)
+        .with_font(font)
         .with_position(((dimensions.width() * -0.4) / 2.0) - 2.5, y_spacing)
         .with_size((dimensions.width() * 0.4) - 15.0, height)
         .with_anchor(Anchor::TopRight)
