@@ -4,7 +4,7 @@ use amethyst::core::ecs::{
 };
 
 use crate::every_n_seconds;
-use crate::resources::high_scores::CurrentLevelScore;
+use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::systems::load_sprite_system;
 use amethyst::assets::Loader;
 use amethyst::core::ecs::shrev::EventChannel;
@@ -60,7 +60,7 @@ impl<'s> System<'s> for HornetsSystem {
         Read<'s, AssetStorage<SpriteSheet>>,
         ReadExpect<'s, Loader>,
         ReadStorage<'s, Bee>,
-        Write<'s, CurrentLevelScore>,
+        Write<'s, CurrentLevelScoreResource>,
         Read<'s, EventChannel<UiEvent>>,
         Read<'s, LazyUpdate>,
         Read<'s, AssetStorage<Source>>,

@@ -12,39 +12,39 @@ pub mod highscores_keys {
 
 /// Each level will create this resource when it starts.
 #[derive(Default)]
-pub struct CurrentLevelScore {
+pub struct CurrentLevelScoreResource {
     pub(crate) score: u64,
 }
 
 #[derive(Default, Savefile)]
-pub struct HighScores {
+pub struct HighScoresResource {
     /// Keys:
     /// wildfires
     /// hornets
     pub high_scores: HashMap<String, u64>,
 }
 
-impl HighScores {
+impl HighScoresResource {
     pub fn get_score(&self, key: &str) -> u64 {
         *self.high_scores.get(key).unwrap_or(&0)
     }
 }
 
 /// Save HighScores to file.
-pub fn save_scores(scores: &HighScores) {
+pub fn save_scores(scores: &HighScoresResource) {
     save_file("high_scores.txt", 0, scores).expect("Couldn't save high scores file.");
 }
 
 /// Load HighScores from file.
-pub fn load_scores() -> HighScores {
+pub fn load_scores() -> HighScoresResource {
     load_file("high_scores.txt", 0).unwrap_or_default()
 }
 
 /// Updates the high score for a level based on it's key (only if the new score is higher!)
 pub fn update_high_score_if_greater(world: &mut World, key: &str) {
-    let new_score = world.write_resource::<CurrentLevelScore>();
+    let new_score = world.write_resource::<CurrentLevelScoreResource>();
 
-    let mut resource = world.write_resource::<HighScores>();
+    let mut resource = world.write_resource::<HighScoresResource>();
 
     let past_score = resource.get_score(key);
 

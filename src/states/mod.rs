@@ -2,7 +2,7 @@ pub mod hornets;
 pub mod main_menu;
 pub mod wildfires;
 
-use crate::resources::high_scores::{update_high_score_if_greater, CurrentLevelScore};
+use crate::resources::high_scores::{update_high_score_if_greater, CurrentLevelScoreResource};
 use crate::states::main_menu::MainMenuState;
 
 use amethyst::core::Time;
@@ -54,7 +54,7 @@ pub fn update_timer_and_set_high_score(
             let mut ui_texts = world.write_storage::<UiText>();
             let timer_components = world.read_storage::<TimerComponent>();
 
-            let score = world.read_resource::<CurrentLevelScore>();
+            let score = world.read_resource::<CurrentLevelScoreResource>();
 
             let entities = world.entities();
 

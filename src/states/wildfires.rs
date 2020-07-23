@@ -5,7 +5,7 @@ use crate::systems::wildfires::WildfiresSystem;
 
 use crate::resources::high_scores::highscores_keys::WILDFIRES;
 
-use crate::resources::high_scores::CurrentLevelScore;
+use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::states::{
     create_optional_systems_dispatcher, init_level_title, init_timer_and_score_text,
     return_to_main_menu_on_escape, update_timer_and_set_high_score, TimerComponent,
@@ -25,7 +25,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         let world = data.world;
 
         // Init the current level score.
-        world.insert(CurrentLevelScore::default());
+        world.insert(CurrentLevelScoreResource::default());
 
         init_level_title(world, "wildfires_title.png");
 
