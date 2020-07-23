@@ -16,7 +16,7 @@ use amethyst::ui::{Anchor, UiEvent, UiEventType, UiImage, UiTransform};
 use rand::Rng;
 
 use crate::audio::sound_keys::BEE_TAP_SOUND;
-use crate::audio::{play_sound_system, Sounds};
+use crate::audio::{play_sound_system, SoundsResource};
 use amethyst::prelude::Builder;
 use amethyst::{
     assets::AssetStorage,
@@ -64,7 +64,7 @@ impl<'s> System<'s> for HornetsSystem {
         Read<'s, EventChannel<UiEvent>>,
         Read<'s, LazyUpdate>,
         Read<'s, AssetStorage<Source>>,
-        ReadExpect<'s, Sounds>,
+        ReadExpect<'s, SoundsResource>,
         Option<Read<'s, Output>>,
     );
 

@@ -1,10 +1,8 @@
 use amethyst::{
     assets::Loader,
-    audio::{OggFormat, SourceHandle},
+    audio::{AudioSink, OggFormat, SourceHandle},
     ecs::{World, WorldExt},
 };
-
-use amethyst::audio::DjSystemDesc;
 
 use amethyst::core::ecs::Read;
 

@@ -9,6 +9,9 @@ use amethyst::{
     utils::application_root_dir,
 };
 
+use amethyst::audio::DjSystemDesc;
+
+use survive2020::audio::MusicResource;
 use survive2020::states::main_menu::MainMenuState;
 use survive2020::systems::ability_bar::AbilityBarSystemDesc;
 
@@ -27,7 +30,7 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(AudioBundle::default())?
         // Background music
         .with_system_desc(
-            DjSystemDesc::new(|music: &mut Music| music.music.next()),
+            DjSystemDesc::new(|music: &mut MusicResource| music.music.next()),
             "background_music",
             &[],
         )
