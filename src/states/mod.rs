@@ -133,11 +133,11 @@ pub fn init_camera(world: &mut World) {
 /// Creates a systems dispatcher. Takes a closure where the caller adds systems.
 pub fn create_systems_dispatcher<'a, 'b>(
     world: &mut World,
-    add_systems: impl FnOnce(&mut DispatcherBuilder),
+    add_systems: impl FnOnce(&mut DispatcherBuilder, &mut World),
 ) -> Dispatcher<'a, 'b> {
     let mut builder = DispatcherBuilder::new();
 
-    add_systems(&mut builder);
+    add_systems(&mut builder, world);
 
     let mut dispatcher = builder
         .with_pool((*world.read_resource::<ArcThreadPool>()).clone())
@@ -150,7 +150,7 @@ pub fn create_systems_dispatcher<'a, 'b>(
 /// Creates a systems dispatcher. Takes a closure where the caller adds systems. Returns a Some(DispatchBuilder).
 pub fn create_optional_systems_dispatcher<'a, 'b>(
     world: &mut World,
-    add_systems: impl FnOnce(&mut DispatcherBuilder),
+    add_systems: impl FnOnce(&mut DispatcherBuilder, &mut World),
 ) -> Option<Dispatcher<'a, 'b>> {
     Some(create_systems_dispatcher(world, add_systems))
 }

@@ -1,9 +1,6 @@
 use crate::*;
 
-use crate::resources::abilities::{
-    AbilitiesResource, Ability, AbilityInfo, AbilityState, AbilityType,
-};
-use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent};
+use crate::systems::ability_bar::AbilityBarComponent;
 use crate::systems::wildfires::WildfiresSystem;
 
 use crate::resources::high_scores::highscores_keys::WILDFIRES;
@@ -49,7 +46,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         //     }]),
         // );
 
-        self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
+        self.dispatcher = create_optional_systems_dispatcher(world, |builder, _| {
             builder.add(WildfiresSystem, "wildfires", &[])
         });
     }
