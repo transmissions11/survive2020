@@ -2,7 +2,7 @@ pub mod hornets;
 pub mod main_menu;
 pub mod wildfires;
 
-use crate::resources::high_scores::update_high_score_if_greater;
+use crate::resources::high_scores::{update_high_score_if_greater, CurrentLevelScore};
 use crate::states::main_menu::MainMenuState;
 
 use amethyst::core::Time;
@@ -27,6 +27,7 @@ impl Component for TimerComponent {
 }
 
 /// Update the elapsed time using delta seconds and set the high score if max time is passed and the score is the highest.
+/// It also updates the score counter when updating the time.
 pub fn update_timer_and_set_high_score(
     world: &mut World,
     elapsed_time: &mut f32,
@@ -36,8 +37,11 @@ pub fn update_timer_and_set_high_score(
     // Old time + delta seconds.
     let new_time = *elapsed_time + world.read_resource::<Time>().delta_seconds();
 
-    // Whether or not a full second has changed.
-    let time_changed_by_a_second = new_time.floor() > elapsed_time.floor();
+    let rounded_new_time = (new_time * 10.0).round() / 10.0;
+    let rounded_old_time = (*elapsed_time * 10.0).round() / 10.0;
+
+    // Whether or not the rounded times changed
+    let rounded_times_changed = rounded_new_time > rounded_old_time.floor();
 
     // If the timer is maxed out.
     let level_is_over = *elapsed_time >= max_time;
@@ -46,15 +50,21 @@ pub fn update_timer_and_set_high_score(
     *elapsed_time = new_time;
 
     let timer_entity = {
-        if time_changed_by_a_second || level_is_over {
+        if rounded_times_changed || level_is_over {
             let mut ui_texts = world.write_storage::<UiText>();
             let timer_components = world.read_storage::<TimerComponent>();
+
+            let score = world.read_resource::<CurrentLevelScore>();
+
             let entities = world.entities();
 
             let mut timer_entity = None;
 
             for (ui_text, _, entity) in (&mut ui_texts, &timer_components, &entities).join() {
-                ui_text.text = format!("{}s / {}s", elapsed_time.floor(), max_time);
+                ui_text.text = format!(
+                    "{}s / {}s - Score: {}",
+                    rounded_new_time, max_time, score.score
+                );
 
                 if level_is_over {
                     timer_entity = Some(entity);
@@ -83,10 +93,10 @@ pub fn update_timer_and_set_high_score(
     }
 }
 
-/// Create timer text with default value of "0s / {max_seconds}s"
+/// Create timer/score text with default value of "0s / {max_seconds}s - Score: 0"
 /// Tagged with TimerComponent.
 /// It will automatically get deleted when used with `update_timer_and_set_high_score` when the timer ends.
-pub fn init_timer_text(world: &mut World, max_seconds: f32) {
+pub fn init_timer_and_score_text(world: &mut World, max_seconds: f32) {
     let font = get_main_font(world);
 
     let transform = UiTransform::new(
@@ -101,7 +111,7 @@ pub fn init_timer_text(world: &mut World, max_seconds: f32) {
     );
     let ui_text = UiText::new(
         font,
-        format!("0s /{}s", max_seconds),
+        format!("0s /{}s - Score: 0", max_seconds),
         [1.0, 1.0, 1.0, 1.0],
         25.0,
         LineMode::Single,

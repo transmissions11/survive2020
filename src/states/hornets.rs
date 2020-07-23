@@ -9,7 +9,7 @@ use crate::resources::abilities::{
 use crate::resources::high_scores::highscores_keys::HORNETS;
 use crate::resources::high_scores::CurrentLevelScore;
 use crate::states::{
-    create_optional_systems_dispatcher, init_level_title, init_timer_text,
+    create_optional_systems_dispatcher, init_level_title, init_timer_and_score_text,
     return_to_main_menu_on_escape, run_systems, update_timer_and_set_high_score, TimerComponent,
 };
 use crate::*;
@@ -31,7 +31,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
 
         init_level_title(world, "hornets_title.png");
 
-        init_timer_text(world, MAX_SECONDS);
+        init_timer_and_score_text(world, MAX_SECONDS);
 
         let bug_spray_sprite = load_sprite(world, "bug_spray_ability.png", 0);
         let swatter_sprite = load_sprite(world, "swatter_ability.png", 0);
@@ -61,8 +61,8 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
             ]),
         );
 
-        self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
-            builder.add(HornetsSystem::default(), "hornets", &[])
+        self.dispatcher = create_optional_systems_dispatcher(world, |builder, world| {
+            builder.add(HornetsSystem::default(), "hornets", &[]);
         });
     }
 

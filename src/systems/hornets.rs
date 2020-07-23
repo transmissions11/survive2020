@@ -1,8 +1,9 @@
 use amethyst::core::ecs::{
-    Component, DenseVecStorage, Entities, Join, Read, System, SystemData, WriteStorage,
+    Component, DenseVecStorage, Entities, Join, Read, System, SystemData, Write, WriteStorage,
 };
 
 use crate::every_n_seconds;
+use crate::resources::high_scores::CurrentLevelScore;
 use crate::systems::load_sprite_system;
 use amethyst::assets::{AssetStorage, Loader};
 use amethyst::core::{Time, Transform};
@@ -35,6 +36,7 @@ impl<'s> System<'s> for HornetsSystem {
         WriteStorage<'s, SpriteRender>,
         WriteStorage<'s, Transform>,
         WriteStorage<'s, Bee>,
+        Write<'s, CurrentLevelScore>,
     );
 
     fn run(
@@ -48,6 +50,7 @@ impl<'s> System<'s> for HornetsSystem {
             mut sprite_render_storage,
             mut transform_storage,
             mut bee_storage,
+            mut score,
         ): Self::SystemData,
     ) {
         let mut rng = rand::thread_rng();
@@ -55,8 +58,10 @@ impl<'s> System<'s> for HornetsSystem {
             if every_n_seconds(0.5, &*time) {
                 let mut transform = Transform::default();
 
+                score.score = rng.gen_range(10, 9000);
+
                 transform.set_translation_xyz(
-                    rng.gen_range(100., 500.),
+                    rng.gen_range(150., 450.),
                     rng.gen_range(100., 500.),
                     0.0,
                 );

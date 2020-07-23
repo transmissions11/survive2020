@@ -7,7 +7,7 @@ use crate::resources::high_scores::highscores_keys::WILDFIRES;
 
 use crate::resources::high_scores::CurrentLevelScore;
 use crate::states::{
-    create_optional_systems_dispatcher, init_level_title, init_timer_text,
+    create_optional_systems_dispatcher, init_level_title, init_timer_and_score_text,
     return_to_main_menu_on_escape, update_timer_and_set_high_score, TimerComponent,
 };
 use amethyst::shred::Dispatcher;
@@ -29,7 +29,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
         init_level_title(world, "wildfires_title.png");
 
-        init_timer_text(world, MAX_SECONDS);
+        init_timer_and_score_text(world, MAX_SECONDS);
 
         // let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
         // init_abilities_bar(

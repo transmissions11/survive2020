@@ -13,7 +13,7 @@ pub mod highscores_keys {
 /// Each level will create this resource when it starts.
 #[derive(Default)]
 pub struct CurrentLevelScore {
-    score: u64,
+    pub(crate) score: u64,
 }
 
 #[derive(Default, Savefile)]
