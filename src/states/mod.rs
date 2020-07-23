@@ -2,7 +2,7 @@ pub mod hornets;
 pub mod main_menu;
 pub mod wildfires;
 
-use crate::resources::high_scores::update_high_score_if_greater;
+use crate::resources::high_scores::{update_high_score_if_greater, CurrentLevelScore};
 use crate::states::main_menu::MainMenuState;
 
 use amethyst::core::Time;
@@ -31,7 +31,6 @@ pub fn update_timer_and_set_high_score(
     world: &mut World,
     elapsed_time: &mut f32,
     max_time: f32,
-    score: u64,
     high_score_key: &str,
 ) -> SimpleTrans {
     // Old time + delta seconds.
@@ -69,7 +68,7 @@ pub fn update_timer_and_set_high_score(
     };
 
     if level_is_over {
-        update_high_score_if_greater(world, high_score_key, score);
+        update_high_score_if_greater(world, high_score_key);
 
         // Delete the timer entity.
         if let Some(entity) = timer_entity {

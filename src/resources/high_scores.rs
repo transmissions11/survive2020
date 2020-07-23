@@ -10,6 +10,12 @@ pub mod highscores_keys {
     pub const HORNETS: &str = "hornets";
 }
 
+/// Each level will create this resource when it starts.
+#[derive(Default)]
+pub struct CurrentLevelScore {
+    score: u64,
+}
+
 #[derive(Default, Savefile)]
 pub struct HighScores {
     /// Keys:
@@ -35,13 +41,17 @@ pub fn load_scores() -> HighScores {
 }
 
 /// Updates the high score for a level based on it's key (only if the new score is higher!)
-pub fn update_high_score_if_greater(world: &mut World, key: &str, new_score: u64) {
+pub fn update_high_score_if_greater(world: &mut World, key: &str) {
+    let new_score = world.write_resource::<CurrentLevelScore>();
+
     let mut resource = world.write_resource::<HighScores>();
 
-    let current_score = resource.get_score(key);
+    let past_score = resource.get_score(key);
 
-    if new_score > current_score {
-        resource.high_scores.insert(key.to_string(), new_score);
+    if new_score.score > past_score {
+        resource
+            .high_scores
+            .insert(key.to_string(), new_score.score);
 
         save_scores(&*resource);
     }

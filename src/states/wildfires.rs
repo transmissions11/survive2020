@@ -8,6 +8,7 @@ use crate::systems::wildfires::WildfiresSystem;
 
 use crate::resources::high_scores::highscores_keys::WILDFIRES;
 
+use crate::resources::high_scores::CurrentLevelScore;
 use crate::states::{
     create_optional_systems_dispatcher, init_level_title, init_timer_text,
     return_to_main_menu_on_escape, update_timer_and_set_high_score, TimerComponent,
@@ -20,12 +21,14 @@ pub const MAX_SECONDS: f32 = 10.0;
 pub struct WildfireState<'a, 'b> {
     dispatcher: Option<Dispatcher<'a, 'b>>,
     seconds_elapsed: f32,
-    score: u64,
 }
 
 impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
+
+        // Init the current level score.
+        world.insert(CurrentLevelScore::default());
 
         init_level_title(world, "wildfires_title.png");
 
@@ -67,12 +70,6 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         let world = &mut data.world;
 
-        update_timer_and_set_high_score(
-            *world,
-            &mut self.seconds_elapsed,
-            MAX_SECONDS,
-            self.score,
-            WILDFIRES,
-        )
+        update_timer_and_set_high_score(*world, &mut self.seconds_elapsed, MAX_SECONDS, WILDFIRES)
     }
 }
