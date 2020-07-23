@@ -2953,6 +2953,7 @@ name = "survive2020"
 version = "0.1.0"
 dependencies = [
  "amethyst 0.15.1 (git+https://github.com/amethyst/amethyst?rev=2535a065fb34234a1e5b74c4da5717d1dcdce6ca)",
+ "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "savefile 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "savefile-derive 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

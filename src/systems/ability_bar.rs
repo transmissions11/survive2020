@@ -37,8 +37,8 @@ impl Component for ProgressBar {
     type Storage = DenseVecStorage<Self>;
 }
 
-#[derive(Default)]
 /// Used to tag any entities apart of the ability bar.
+#[derive(Default)]
 pub struct AbilityBarComponent;
 impl Component for AbilityBarComponent {
     type Storage = VecStorage<Self>;

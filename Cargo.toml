@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 savefile="0.7"
 savefile-derive="0.7"
+rand = "0.7.3"
 
 [dependencies.amethyst]
 version = "0.15"

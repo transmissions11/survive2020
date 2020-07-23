@@ -52,7 +52,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
         );
 
         self.dispatcher = create_optional_systems_dispatcher(world, |builder| {
-            builder.add(HornetsSystem, "hornets", &[])
+            builder.add(HornetsSystem::default(), "hornets", &[])
         });
     }
 

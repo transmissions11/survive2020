@@ -2,7 +2,7 @@ pub mod hornets;
 pub mod main_menu;
 pub mod wildfires;
 
-use crate::resources::high_scores::{update_high_score_if_greater, CurrentLevelScore};
+use crate::resources::high_scores::update_high_score_if_greater;
 use crate::states::main_menu::MainMenuState;
 
 use amethyst::core::Time;
