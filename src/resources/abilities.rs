@@ -27,6 +27,8 @@ pub struct Ability {
 /// Type of ability.
 pub enum AbilityType {
     Vaccine,
+    FlySwatter,
+    BugSpray,
 }
 
 /// Information about an ability.
