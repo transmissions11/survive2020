@@ -25,6 +25,12 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(TransformBundle::new())?
         .with_bundle(UiBundle::<StringBindings>::new())?
         .with_bundle(AudioBundle::default())?
+        // Background music
+        .with_system_desc(
+            DjSystemDesc::new(|music: &mut Music| music.music.next()),
+            "background_music",
+            &[],
+        )
         .with_system_desc(AbilityBarSystemDesc::default(), "ability_bar", &[])
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()

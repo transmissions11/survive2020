@@ -4,6 +4,8 @@ use amethyst::{
     ecs::{World, WorldExt},
 };
 
+use amethyst::audio::DjSystemDesc;
+
 use amethyst::core::ecs::Read;
 
 use amethyst::{
@@ -14,14 +16,27 @@ use amethyst::{
 use std::collections::HashMap;
 use std::ops::Deref;
 
+use std::{iter::Cycle, vec::IntoIter};
+
+/// Background music resource.
+pub struct MusicResource {
+    pub music: Cycle<IntoIter<SourceHandle>>,
+}
+
+/// Sound effects resource.
+pub struct SoundsResource {
+    pub sounds: HashMap<String, SourceHandle>,
+}
+
 /// Keys for the `sounds` HashMap.
 pub mod sound_keys {
     pub const BEE_TAP_SOUND: &str = "audio/bee_tap.ogg";
 }
 
-pub struct Sounds {
-    pub sounds: HashMap<String, SourceHandle>,
-}
+pub const MUSIC_TRACKS: &[&str] = &[
+    "audio/Computer_Music_All-Stars_-_Wheres_My_Jetpack.ogg",
+    "audio/Computer_Music_All-Stars_-_Albatross_v2.ogg",
+];
 
 /// Loads an ogg audio track.
 fn load_audio_track(loader: &Loader, world: &World, file: &str) -> SourceHandle {
@@ -30,7 +45,7 @@ fn load_audio_track(loader: &Loader, world: &World, file: &str) -> SourceHandle 
 
 /// Initialise audio in the world.
 pub fn initialise_audio(world: &mut World) {
-    let sound_effects = {
+    let (sound_effects, music) = {
         let loader = world.read_resource::<Loader>();
 
         let mut sounds = HashMap::new();
@@ -40,18 +55,29 @@ pub fn initialise_audio(world: &mut World) {
             load_audio_track(&loader, &world, sound_keys::BEE_TAP_SOUND),
         );
 
-        Sounds { sounds }
+        let mut sink = world.write_resource::<AudioSink>();
+        // Music is a bit loud, reduce the volume.
+        // This only affects background music.
+        sink.set_volume(0.25);
+
+        let music = MUSIC_TRACKS
+            .iter()
+            .map(|file| load_audio_track(&loader, &world, file))
+            .collect::<Vec<_>>()
+            .into_iter()
+            .cycle();
+
+        (SoundsResource { sounds }, MusicResource { music })
     };
 
-    // Add sound effects to the world. We have to do this in another scope because
-    // world won't let us insert new resources as long as `Loader` is borrowed.
     world.insert(sound_effects);
+    world.insert(music);
 }
 
 /// Play a sound based on its key. (Meant for systems to use, as this func takes Read<T>)
 pub fn play_sound_system(
     key: &str,
-    sounds: &Read<Sounds, PanicHandler>,
+    sounds: &Read<SoundsResource, PanicHandler>,
     storage: &Read<AssetStorage<Source>>,
     output: &Option<Read<Output>>,
 ) {
@@ -61,7 +87,7 @@ pub fn play_sound_system(
 /// Play a sound based on its key. (Meant for systems)
 pub fn play_score_sound(
     key: &str,
-    sounds: &Sounds,
+    sounds: &SoundsResource,
     storage: &AssetStorage<Source>,
     output: Option<&Output>,
 ) {
