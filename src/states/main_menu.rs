@@ -5,6 +5,7 @@ use crate::states::wildfires::WildfireState;
 use crate::systems::ability_bar::AbilityBarComponent;
 use crate::*;
 
+use crate::audio::initialise_audio;
 use crate::states::{init_camera, init_level_title, LevelTitle, TimerComponent};
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
@@ -92,6 +93,9 @@ impl SimpleState for MainMenuState {
 
         // Init 2d camera
         init_camera(world);
+
+        // Init audio
+        initialise_audio(world);
 
         // Init level title
         init_level_title(world, "logo.png");

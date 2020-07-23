@@ -104,7 +104,7 @@ pub fn init_timer_and_score_text(world: &mut World, max_seconds: f32) {
         Anchor::TopMiddle,
         Anchor::TopMiddle,
         0.0,
-        -65.0,
+        -55.0,
         0.0,
         600.0,
         50.0,

@@ -1,7 +1,7 @@
 use amethyst::ecs::Dispatcher;
 
 use crate::systems::ability_bar::{init_abilities_bar, AbilityBarComponent};
-use crate::systems::hornets::{Bee, HornetsSystem};
+use crate::systems::hornets::{Bee, HornetsSystemDesc};
 
 use crate::resources::abilities::{
     AbilitiesResource, Ability, AbilityInfo, AbilityState, AbilityType,
@@ -62,7 +62,11 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
         );
 
         self.dispatcher = create_optional_systems_dispatcher(world, |builder, world| {
-            builder.add(HornetsSystem::default(), "hornets", &[]);
+            builder.add(
+                HornetsSystemDesc { bee_texture: None }.build(world),
+                "hornets",
+                &[],
+            );
         });
     }
 
@@ -85,8 +89,6 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
 
         run_systems(world, &mut self.dispatcher);
 
-        update_timer_and_set_high_score(world, &mut self.seconds_elapsed, MAX_SECONDS, HORNETS);
-
-        Trans::None
+        update_timer_and_set_high_score(world, &mut self.seconds_elapsed, MAX_SECONDS, HORNETS)
     }
 }

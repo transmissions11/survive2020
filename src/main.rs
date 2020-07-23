@@ -1,3 +1,4 @@
+use amethyst::audio::AudioBundle;
 use amethyst::input::{InputBundle, StringBindings};
 use amethyst::renderer::RenderFlat2D;
 use amethyst::{
@@ -7,8 +8,8 @@ use amethyst::{
     ui::{RenderUi, UiBundle},
     utils::application_root_dir,
 };
-use survive2020::states::main_menu::MainMenuState;
 
+use survive2020::states::main_menu::MainMenuState;
 use survive2020::systems::ability_bar::AbilityBarSystemDesc;
 
 fn main() -> amethyst::Result<()> {
@@ -23,6 +24,7 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(InputBundle::<StringBindings>::new())?
         .with_bundle(TransformBundle::new())?
         .with_bundle(UiBundle::<StringBindings>::new())?
+        .with_bundle(AudioBundle::default())?
         .with_system_desc(AbilityBarSystemDesc::default(), "ability_bar", &[])
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
