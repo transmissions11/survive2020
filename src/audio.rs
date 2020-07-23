@@ -32,8 +32,8 @@ pub mod sound_keys {
 }
 
 pub const MUSIC_TRACKS: &[&str] = &[
-    "audio/Computer_Music_All-Stars_-_Wheres_My_Jetpack.ogg",
-    "audio/Computer_Music_All-Stars_-_Albatross_v2.ogg",
+    "audio/background_music_1.ogg",
+    "audio/background_music_2.ogg",
 ];
 
 /// Loads an ogg audio track.
