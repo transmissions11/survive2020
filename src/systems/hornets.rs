@@ -22,6 +22,7 @@ use crate::systems::ability_bar::AbilityBarComponent;
 use amethyst::input::{InputHandler, StringBindings};
 use amethyst::prelude::Builder;
 use amethyst::window::ScreenDimensions;
+use amethyst::winit::MouseButton;
 use amethyst::{
     assets::AssetStorage,
     audio::{output::Output, Source},
@@ -45,13 +46,19 @@ fn create_swatter_ui_transform(x_pos: f32, y_pos: f32) -> UiTransform {
     UiTransform::new(
         "big_swatter".to_string(),
         Anchor::BottomLeft,
-        Anchor::BottomRight,
+        Anchor::Middle,
         x_pos,
         y_pos,
         0.0,
         SWATTER_HEIGHT_AND_WIDTH,
         SWATTER_HEIGHT_AND_WIDTH,
     )
+}
+
+// A point is in a box when its coordinates are smaller or equal than the top
+// right and larger or equal than the bottom left.
+fn point_in_rect(x: f32, y: f32, left: f32, bottom: f32, right: f32, top: f32) -> bool {
+    x >= left && x <= right && y >= bottom && y <= top
 }
 
 #[derive(SystemDesc)]
@@ -140,6 +147,42 @@ impl<'s> System<'s> for HornetsSystem {
                             let ui_transform = ui_transform_storage.get_mut(fly_swatter).unwrap();
 
                             *ui_transform = create_swatter_ui_transform(mouse_pos.0, mouse_pos.1);
+
+                            if input.mouse_button_is_down(MouseButton::Left) {
+                                let swatter_x =
+                                    ui_transform.pixel_x() - (SWATTER_HEIGHT_AND_WIDTH * 0.5);
+                                let swatter_y =
+                                    ui_transform.pixel_y() - (SWATTER_HEIGHT_AND_WIDTH * 0.5);
+
+                                let bee_radius = BEE_SPRITE_HEIGHT_AND_WIDTH * 0.5;
+
+                                for (entity, _bee, bee_ui_transform) in
+                                    (&entities, &bee_storage, &ui_transform_storage).join()
+                                {
+                                    if point_in_rect(
+                                        bee_ui_transform.pixel_x(),
+                                        bee_ui_transform.pixel_y(),
+                                        swatter_x - bee_radius,
+                                        swatter_y - bee_radius,
+                                        swatter_x + SWATTER_HEIGHT_AND_WIDTH + bee_radius,
+                                        swatter_y + SWATTER_HEIGHT_AND_WIDTH + bee_radius,
+                                    ) {
+                                        // Delete the bee
+                                        entities.delete(entity).expect("Couldn't delete bee.");
+
+                                        // Play sound
+                                        play_sound_system(
+                                            BEE_TAP_SOUND,
+                                            &sounds,
+                                            &audio_storage,
+                                            &audio_output,
+                                        );
+
+                                        // Increase the score
+                                        score.score += 1;
+                                    }
+                                }
+                            }
                         } else {
                             let swatter_sprite = load_sprite_system(
                                 &texture_storage,
