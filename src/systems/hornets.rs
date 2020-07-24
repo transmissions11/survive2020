@@ -18,7 +18,7 @@ use rand::Rng;
 use crate::audio::sound_keys::BEE_TAP_SOUND;
 use crate::audio::{play_sound_system, SoundsResource};
 use crate::resources::abilities::{AbilitiesResource, AbilityType};
-use crate::systems::ability_bar::AbilityBarComponent;
+use crate::systems::ability_bar::{AbilityBarComponent, RemoveItem};
 use amethyst::input::{InputHandler, StringBindings};
 use amethyst::prelude::Builder;
 use amethyst::window::ScreenDimensions;
@@ -118,11 +118,15 @@ impl<'s> System<'s> for HornetsSystem {
             audio_storage,
             sounds,
             audio_output,
-            abilities,
+            mut abilities,
             input,
             dimensions,
         ): Self::SystemData,
     ) {
+        // All indexes in this ability will be removed from active_abilities
+        let mut should_be_deactivated_abilities: Vec<usize> = Vec::new();
+
+        // Handle abilities
         for (index, ability) in abilities.available_abilities.iter().enumerate() {
             // If that ability is active
             if abilities.active_abilities.contains(&index) {
@@ -149,12 +153,27 @@ impl<'s> System<'s> for HornetsSystem {
                             *ui_transform = create_swatter_ui_transform(mouse_pos.0, mouse_pos.1);
 
                             if input.mouse_button_is_down(MouseButton::Left) {
+                                // Can only use swatter once.
+                                should_be_deactivated_abilities.push(index);
+                                entities
+                                    .delete(fly_swatter)
+                                    .expect("Couldn't delete big swatter!");
+                                self.swatter = None;
+
                                 let swatter_x =
                                     ui_transform.pixel_x() - (SWATTER_HEIGHT_AND_WIDTH * 0.5);
                                 let swatter_y =
                                     ui_transform.pixel_y() - (SWATTER_HEIGHT_AND_WIDTH * 0.5);
 
                                 let bee_radius = BEE_SPRITE_HEIGHT_AND_WIDTH * 0.5;
+
+                                // Play sound of bee dying (we dont want to play it for each bee or it sounds bad)
+                                play_sound_system(
+                                    BEE_TAP_SOUND,
+                                    &sounds,
+                                    &audio_storage,
+                                    &audio_output,
+                                );
 
                                 for (entity, _bee, bee_ui_transform) in
                                     (&entities, &bee_storage, &ui_transform_storage).join()
@@ -169,14 +188,6 @@ impl<'s> System<'s> for HornetsSystem {
                                     ) {
                                         // Delete the bee
                                         entities.delete(entity).expect("Couldn't delete bee.");
-
-                                        // Play sound
-                                        play_sound_system(
-                                            BEE_TAP_SOUND,
-                                            &sounds,
-                                            &audio_storage,
-                                            &audio_output,
-                                        );
 
                                         // Increase the score
                                         score.score += 1;
@@ -211,6 +222,15 @@ impl<'s> System<'s> for HornetsSystem {
             }
         }
 
+        // Remove abilities that have been used
+        for index in should_be_deactivated_abilities {
+            abilities.available_abilities[index]
+                .current_state
+                .percentage = 0.0;
+            abilities.active_abilities.remove_first_found_item(&index);
+        }
+
+        // Handle clicking on bees
         for ui_event in events.read(&mut self.reader_id) {
             if ui_event.event_type == UiEventType::Click {
                 // If the UI target is a bee
@@ -231,26 +251,35 @@ impl<'s> System<'s> for HornetsSystem {
 
         let mut rng = rand::thread_rng();
         if let Some(bee_sprite) = &self.bee_texture {
+            // Spawn new bees and delete old ones
             if every_n_seconds(0.5, &*time) {
-                let pos_x = rng.gen_range(150., 450.);
-                let pos_y = rng.gen_range(100., 500.);
+                let bees_to_spawn = rng.gen_range(1, 6);
 
-                lazy.create_entity(&entities)
-                    .with(UiImage::Sprite(bee_sprite.clone()))
-                    .with(UiTransform::new(
-                        pos_x.to_string(),
-                        Anchor::BottomLeft,
-                        Anchor::Middle,
-                        pos_x,
-                        pos_y,
-                        0.,
-                        BEE_SPRITE_HEIGHT_AND_WIDTH,
-                        BEE_SPRITE_HEIGHT_AND_WIDTH,
-                    ))
-                    .with(Bee {
-                        expiration_frame: time.frame_number() + rng.gen_range(50, 180),
-                    })
-                    .build();
+                let mut bees_left_to_spawn = bees_to_spawn;
+
+                while bees_left_to_spawn != 0 {
+                    let pos_x = rng.gen_range(150., 450.);
+                    let pos_y = rng.gen_range(100., 500.);
+
+                    lazy.create_entity(&entities)
+                        .with(UiImage::Sprite(bee_sprite.clone()))
+                        .with(UiTransform::new(
+                            pos_x.to_string(),
+                            Anchor::BottomLeft,
+                            Anchor::Middle,
+                            pos_x,
+                            pos_y,
+                            0.,
+                            BEE_SPRITE_HEIGHT_AND_WIDTH,
+                            BEE_SPRITE_HEIGHT_AND_WIDTH,
+                        ))
+                        .with(Bee {
+                            expiration_frame: time.frame_number() + rng.gen_range(50, 180),
+                        })
+                        .build();
+
+                    bees_left_to_spawn -= 1;
+                }
             }
 
             for (entity, bee) in (&entities, &bee_storage).join() {
@@ -259,6 +288,7 @@ impl<'s> System<'s> for HornetsSystem {
                 }
             }
         } else {
+            // Load bee texture
             self.bee_texture = Some(load_sprite_system(
                 &texture_storage,
                 &sheet_storage,
