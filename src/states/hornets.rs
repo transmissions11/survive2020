@@ -67,7 +67,11 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
 
         self.dispatcher = create_optional_systems_dispatcher(world, |builder, world| {
             builder.add(
-                HornetsSystemDesc { bee_texture: None }.build(world),
+                HornetsSystemDesc {
+                    bee_texture: None,
+                    swatter: None,
+                }
+                .build(world),
                 "hornets",
                 &[],
             );
