@@ -100,8 +100,9 @@ impl SimpleState for MainMenuState {
         // Init level title
         init_level_title(world, "logo.png");
 
+        // Create the fonts resource.
         let font = load_font(world, "main_font.ttf");
-        world.insert(font);
+        world.insert(FontsResource { main_font: font });
 
         let high_scores = load_scores();
 

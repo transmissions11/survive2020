@@ -94,11 +94,16 @@ pub fn delete_all_entities_with_component<T: Component>(world: &mut World) {
     }
 }
 
+/// Resource storing fonts.
+pub struct FontsResource {
+    pub main_font: FontHandle,
+}
+
 /// Gets the main font from a resource.
 pub fn get_main_font(world: &mut World) -> FontHandle {
-    let font = world.read_resource::<FontHandle>();
+    let font = world.read_resource::<FontsResource>();
 
-    (*font).clone()
+    font.main_font.clone()
 }
 
 /// Creates a UiImage::SolidColor from rgba.
