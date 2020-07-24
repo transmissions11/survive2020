@@ -6,9 +6,7 @@ use crate::systems::ability_bar::AbilityBarComponent;
 use crate::*;
 
 use crate::audio::initialise_audio;
-use crate::states::{
-    init_camera, init_level_title, pre_init_level_background, LevelAsset, TimerComponent,
-};
+use crate::states::{init_camera, init_level_title, LevelAsset, TimerComponent};
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]
