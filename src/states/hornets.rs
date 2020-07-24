@@ -45,7 +45,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                 Ability {
                     info: AbilityInfo {
                         ability_type: AbilityType::BugSpray,
-                        seconds_to_charge: 60,
+                        seconds_to_charge: 20,
                         duration: None,
                         icon: bug_spray_sprite,
                         max_uses: None,
@@ -55,7 +55,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                 Ability {
                     info: AbilityInfo {
                         ability_type: AbilityType::FlySwatter,
-                        seconds_to_charge: 30,
+                        seconds_to_charge: 15,
                         duration: Some(4),
                         icon: swatter_sprite,
                         max_uses: None,
