@@ -15,7 +15,7 @@ use amethyst::renderer::{SpriteRender, SpriteSheet, Texture};
 use amethyst::ui::{Anchor, UiEvent, UiEventType, UiImage, UiTransform};
 use rand::Rng;
 
-use crate::audio::sound_keys::BEE_TAP_SOUND;
+use crate::audio::sound_keys::{BEE_TAP_SOUND, BUG_SPRAY_SOUND, FLY_SWAT_SOUND};
 use crate::audio::{play_sound_system, SoundsResource};
 use crate::resources::abilities::{AbilitiesResource, AbilityType};
 use crate::systems::ability_bar::{AbilityBarComponent, RemoveItem};
@@ -167,9 +167,8 @@ impl<'s> System<'s> for HornetsSystem {
 
                                 let bee_radius = BEE_SPRITE_HEIGHT_AND_WIDTH * 0.5;
 
-                                // Play sound of bee dying (we dont want to play it for each bee or it sounds bad)
                                 play_sound_system(
-                                    BEE_TAP_SOUND,
+                                    FLY_SWAT_SOUND,
                                     &sounds,
                                     &audio_storage,
                                     &audio_output,
@@ -216,7 +215,20 @@ impl<'s> System<'s> for HornetsSystem {
                             );
                         }
                     }
-                    AbilityType::BugSpray => {}
+                    AbilityType::BugSpray => {
+                        // Can only use swatter once.
+                        should_be_deactivated_abilities.push(index);
+
+                        play_sound_system(BUG_SPRAY_SOUND, &sounds, &audio_storage, &audio_output);
+
+                        for (entity, _bee) in (&entities, &bee_storage).join() {
+                            // Delete the bee
+                            entities.delete(entity).expect("Couldn't delete bee.");
+
+                            // Increase the score
+                            score.score += 1;
+                        }
+                    }
                     _ => {}
                 }
             }

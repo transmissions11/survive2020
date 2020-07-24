@@ -29,6 +29,8 @@ pub struct SoundsResource {
 /// Keys for the `sounds` HashMap.
 pub mod sound_keys {
     pub const BEE_TAP_SOUND: &str = "audio/bee_tap.ogg";
+    pub const BUG_SPRAY_SOUND: &str = "audio/bug_spray.ogg";
+    pub const FLY_SWAT_SOUND: &str = "audio/fly_swat.ogg";
 }
 
 pub const MUSIC_TRACKS: &[&str] = &[
@@ -51,6 +53,16 @@ pub fn initialise_audio(world: &mut World) {
         sounds.insert(
             sound_keys::BEE_TAP_SOUND.to_string(),
             load_audio_track(&loader, &world, sound_keys::BEE_TAP_SOUND),
+        );
+
+        sounds.insert(
+            sound_keys::BUG_SPRAY_SOUND.to_string(),
+            load_audio_track(&loader, &world, sound_keys::BUG_SPRAY_SOUND),
+        );
+
+        sounds.insert(
+            sound_keys::FLY_SWAT_SOUND.to_string(),
+            load_audio_track(&loader, &world, sound_keys::FLY_SWAT_SOUND),
         );
 
         let mut sink = world.write_resource::<AudioSink>();
