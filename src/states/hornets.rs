@@ -9,8 +9,9 @@ use crate::resources::abilities::{
 use crate::resources::high_scores::highscores_keys::HORNETS;
 use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::states::{
-    create_optional_systems_dispatcher, init_level_title, init_timer_and_score_text,
-    return_to_main_menu_on_escape, run_systems, update_timer_and_set_high_score, TimerComponent,
+    create_optional_systems_dispatcher, init_level_background, init_level_title,
+    init_timer_and_score_text, return_to_main_menu_on_escape, run_systems,
+    update_timer_and_set_high_score, LevelAsset, TimerComponent,
 };
 use crate::*;
 
@@ -26,12 +27,15 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        // Init the current level score.
-        world.insert(CurrentLevelScoreResource::default());
+        // Init the level background.
+        init_level_background(world, "hornets_background.png");
 
         init_level_title(world, "hornets_title.png");
 
         init_timer_and_score_text(world, MAX_SECONDS);
+
+        // Init the current level score.
+        world.insert(CurrentLevelScoreResource::default());
 
         let bug_spray_sprite = load_sprite(world, "bug_spray_ability.png", 0);
         let swatter_sprite = load_sprite(world, "swatter_ability.png", 0);
@@ -73,6 +77,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         delete_all_entities_with_component::<AbilityBarComponent>(data.world);
         delete_all_entities_with_component::<TimerComponent>(data.world);
+        delete_all_entities_with_component::<LevelAsset>(data.world);
         delete_all_entities_with_component::<Bee>(data.world);
     }
 

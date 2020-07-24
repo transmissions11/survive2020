@@ -8,7 +8,7 @@ use crate::states::main_menu::MainMenuState;
 use amethyst::core::Time;
 use amethyst::input::{is_key_down, VirtualKeyCode};
 
-use crate::{delete_all_entities_with_component, get_main_font, load_sprite};
+use crate::{get_main_font, load_sprite};
 use amethyst::ui::{Anchor, LineMode, UiText, UiTransform};
 use amethyst::{
     core::transform::Transform,
@@ -185,18 +185,39 @@ pub fn return_to_main_menu_on_escape(event: StateEvent) -> SimpleTrans {
     }
 }
 
-/// Tag a component as the title of a level.
-/// Since all levels have this (including the main menu), you do not need to delete them in your `on_stop` func.
-pub struct LevelTitle;
-impl Component for LevelTitle {
+/// Tag a component as level assets (level title and background)
+pub struct LevelAsset;
+impl Component for LevelAsset {
     type Storage = DenseVecStorage<Self>;
+}
+
+/// Displays the level background in the center of the screen.
+pub fn init_level_background(world: &mut World, filename: &str) {
+    let background = load_sprite(world, filename, 0);
+
+    let (width, height) = {
+        let dimensions = world.read_resource::<ScreenDimensions>();
+
+        let width = dimensions.width();
+        let height = dimensions.height();
+
+        (width, height)
+    };
+
+    let mut transform = Transform::default();
+
+    transform.set_translation_xyz(width * 0.5, height * 0.5, -10.0);
+
+    world
+        .create_entity()
+        .with(LevelAsset)
+        .with(transform)
+        .with(background)
+        .build();
 }
 
 /// Displays the level title at the top of the screen.
 pub fn init_level_title(world: &mut World, filename: &str) {
-    // Delete previous titles
-    delete_all_entities_with_component::<LevelTitle>(world);
-
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 
     let sprite = load_sprite(world, filename, 0);
@@ -206,7 +227,7 @@ pub fn init_level_title(world: &mut World, filename: &str) {
 
     world
         .create_entity()
-        .with(LevelTitle)
+        .with(LevelAsset)
         .with(transform)
         .with(sprite)
         .build();

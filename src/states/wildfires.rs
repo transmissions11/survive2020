@@ -8,7 +8,7 @@ use crate::resources::high_scores::highscores_keys::WILDFIRES;
 use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::states::{
     create_optional_systems_dispatcher, init_level_title, init_timer_and_score_text,
-    return_to_main_menu_on_escape, update_timer_and_set_high_score, TimerComponent,
+    return_to_main_menu_on_escape, update_timer_and_set_high_score, LevelAsset, TimerComponent,
 };
 use amethyst::shred::Dispatcher;
 
@@ -54,6 +54,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         delete_all_entities_with_component::<AbilityBarComponent>(data.world);
         delete_all_entities_with_component::<TimerComponent>(data.world);
+        delete_all_entities_with_component::<LevelAsset>(data.world);
     }
 
     fn handle_event(

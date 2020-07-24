@@ -6,7 +6,9 @@ use crate::systems::ability_bar::AbilityBarComponent;
 use crate::*;
 
 use crate::audio::initialise_audio;
-use crate::states::{init_camera, init_level_title, LevelTitle, TimerComponent};
+use crate::states::{
+    init_camera, init_level_title, pre_init_level_background, LevelAsset, TimerComponent,
+};
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]
@@ -87,7 +89,7 @@ impl SimpleState for MainMenuState {
         let world = data.world;
 
         // Register the components we won't use in any systems
-        world.register::<LevelTitle>();
+        world.register::<LevelAsset>();
         world.register::<AbilityBarComponent>();
         world.register::<TimerComponent>();
 
@@ -123,6 +125,8 @@ impl SimpleState for MainMenuState {
 
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
+
+        delete_all_entities_with_component::<LevelAsset>(world);
 
         delete_level_and_highscore_buttons(world, &self.hornets_and_highscore_button);
         delete_level_and_highscore_buttons(world, &self.wildfires_and_highscore_button);
