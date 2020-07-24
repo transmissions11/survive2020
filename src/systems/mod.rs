@@ -10,9 +10,9 @@ pub mod wildfires;
 /// Load a sprite from a file and sprite number. Returns a SpriteRender.
 /// Will panic if filename does not contain an extension.
 pub fn load_sprite_system(
-    texture_storage: Read<AssetStorage<Texture>>,
-    sheet_storage: Read<AssetStorage<SpriteSheet>>,
-    loader: Read<Loader, PanicHandler>,
+    texture_storage: &Read<AssetStorage<Texture>>,
+    sheet_storage: &Read<AssetStorage<SpriteSheet>>,
+    loader: &Read<Loader, PanicHandler>,
     filename: &str,
     sprite_number: usize,
 ) -> SpriteRender {

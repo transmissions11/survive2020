@@ -2,6 +2,7 @@ use amethyst::renderer::SpriteRender;
 use amethyst::ui::UiButton;
 
 /// All available abilities and all active abilities.
+#[derive(Default)]
 pub struct AbilitiesResource {
     /// All available abilities.
     pub available_abilities: Vec<Ability>,

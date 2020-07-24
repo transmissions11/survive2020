@@ -56,7 +56,7 @@ pub fn initialise_audio(world: &mut World) {
         let mut sink = world.write_resource::<AudioSink>();
         // Music is a bit loud, reduce the volume.
         // This only affects background music.
-        sink.set_volume(0.25);
+        sink.set_volume(0.10);
 
         let music = MUSIC_TRACKS
             .iter()
