@@ -86,7 +86,7 @@ pub fn create_progress_bar_transform(
         Anchor::BottomLeft,
         Anchor::MiddleLeft,
         x_padding - (0.5 * PROGRESS_BAR_MAX_WIDTH),
-        (arena_height * 0.1) - ABILITY_FRAME_HEIGHT_AND_WITH / 2.5,
+        (arena_height * 0.05) - ABILITY_FRAME_HEIGHT_AND_WITH / 2.5,
         0.,
         PROGRESS_BAR_MAX_WIDTH * percent,
         PROGRESS_BAR_HEIGHT,
@@ -127,7 +127,8 @@ pub fn create_ability_item(
 
     let (_id, button) = UiButtonBuilder::<(), u32>::new(String::new())
         .with_anchor(Anchor::BottomLeft)
-        .with_position(x_padding, dimensions.height() * 0.1)
+        .with_layer(3.0)
+        .with_position(x_padding, dimensions.height() * 0.05)
         .with_size(52., 52.)
         .with_image(UiImage::Sprite(ability_frame))
         .with_hover_image(UiImage::Sprite(selected_ability_frame))
@@ -135,12 +136,25 @@ pub fn create_ability_item(
         .with_parent(button_parent)
         .build_from_world(&world);
 
-    // Create the icon in the center of the frame.
+    let background = load_sprite(world, "ability_frame_background.png", 0);
+
+    // Create the background in the center of the frame.
+    let mut background_transform = Transform::default();
+    background_transform.set_translation_xyz(x_padding, dimensions.height() * 0.05, 1.0);
+
+    world
+        .create_entity()
+        .with(background_transform.clone())
+        .with(background)
+        .with(AbilityBarComponent)
+        .build();
+
+    // Create the icon in the upper center of the frame.
     let mut icon_transform = Transform::default();
     icon_transform.set_translation_xyz(
         x_padding,
-        (dimensions.height() * 0.1) + PROGRESS_BAR_HEIGHT / 2.5,
-        0.0,
+        (dimensions.height() * 0.05) + PROGRESS_BAR_HEIGHT / 2.5,
+        2.0,
     );
 
     world

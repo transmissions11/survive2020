@@ -131,7 +131,7 @@ pub fn init_camera(world: &mut World) {
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 
     let mut transform = Transform::default();
-    transform.set_translation_xyz(dimensions.width() * 0.5, dimensions.height() * 0.5, 1.);
+    transform.set_translation_xyz(dimensions.width() * 0.5, dimensions.height() * 0.5, 10.);
 
     world
         .create_entity()
