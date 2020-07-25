@@ -30,6 +30,7 @@ pub enum AbilityType {
     Vaccine,
     FlySwatter,
     BugSpray,
+    HiveTrap,
 }
 
 /// Information about an ability.

@@ -39,6 +39,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
 
         let bug_spray_sprite = load_sprite(world, "bug_spray_ability.png", 0);
         let swatter_sprite = load_sprite(world, "swatter_ability.png", 0);
+        let hive_trap_sprite = load_sprite(world, "hive_trap_ability.png", 0);
         init_abilities_bar(
             world,
             AbilitiesResource::new(vec![
@@ -58,6 +59,16 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                         seconds_to_charge: 15,
                         duration: Some(4),
                         icon: swatter_sprite,
+                        max_uses: None,
+                    },
+                    current_state: AbilityState::default(),
+                },
+                Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::HiveTrap,
+                        seconds_to_charge: 7,
+                        duration: Some(4),
+                        icon: hive_trap_sprite,
                         max_uses: None,
                     },
                     current_state: AbilityState::default(),
