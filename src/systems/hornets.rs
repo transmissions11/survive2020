@@ -1,6 +1,5 @@
 use amethyst::core::ecs::{
-    Component, DenseVecStorage, Entities, LazyUpdate, Read, ReadExpect, ReadStorage, ReaderId,
-    System, Write,
+    Component, DenseVecStorage, Entities, LazyUpdate, Read, ReadExpect, ReaderId, System, Write,
 };
 
 use crate::every_n_seconds;
@@ -8,14 +7,14 @@ use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::systems::load_sprite_system;
 use amethyst::assets::Loader;
 use amethyst::core::ecs::shrev::EventChannel;
-use amethyst::core::{Time, Transform};
+use amethyst::core::Time;
 use amethyst::derive::SystemDesc;
 use amethyst::ecs::prelude::*;
 use amethyst::renderer::{SpriteRender, SpriteSheet, Texture};
 use amethyst::ui::{Anchor, UiEvent, UiEventType, UiImage, UiTransform};
 use rand::Rng;
 
-use crate::audio::sound_keys::{BEE_TAP_SOUND, BUG_SPRAY_SOUND, FLY_SWAT_SOUND};
+use crate::audio::sound_keys::{BEE_TAP_SOUND, BUG_SPRAY_SOUND, FLY_SWAT_SOUND, HIVE_TRAP_SOUND};
 use crate::audio::{play_sound_system, SoundsResource};
 use crate::resources::abilities::{AbilitiesResource, AbilityType};
 use crate::systems::ability_bar::{AbilityBarComponent, RemoveItem};
@@ -32,6 +31,8 @@ pub const BEE_SPRITE_HEIGHT_AND_WIDTH: f32 = 40.0;
 
 pub const SWATTER_HEIGHT_AND_WIDTH: f32 = 240.0;
 
+pub const HIVE_HEIGHT_AND_WIDTH: f32 = 100.0;
+
 #[derive(Default)]
 pub struct Bee {
     /// The frame when the bee should be removed.
@@ -40,25 +41,23 @@ pub struct Bee {
 impl Component for Bee {
     type Storage = DenseVecStorage<Self>;
 }
+/// Calculates the distance between 2 points.
+fn distance_between_points(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
+    ((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1)).sqrt()
+}
 
-/// Create a UiTransform for the swatter entity.
-fn create_swatter_ui_transform(x_pos: f32, y_pos: f32) -> UiTransform {
+/// Create a UiTransform easily.
+fn create_ui_transform(x_pos: f32, y_pos: f32, height_and_width: f32) -> UiTransform {
     UiTransform::new(
-        "big_swatter".to_string(),
+        (x_pos + y_pos).to_string(),
         Anchor::BottomLeft,
         Anchor::Middle,
         x_pos,
         y_pos,
         0.0,
-        SWATTER_HEIGHT_AND_WIDTH,
-        SWATTER_HEIGHT_AND_WIDTH,
+        height_and_width,
+        height_and_width,
     )
-}
-
-// A point is in a box when its coordinates are smaller or equal than the top
-// right and larger or equal than the bottom left.
-fn point_in_rect(x: f32, y: f32, left: f32, bottom: f32, right: f32, top: f32) -> bool {
-    x >= left && x <= right && y >= bottom && y <= top
 }
 
 #[derive(SystemDesc)]
@@ -70,6 +69,8 @@ pub struct HornetsSystem {
     pub bee_texture: Option<SpriteRender>,
 
     pub swatter: Option<Entity>,
+
+    pub hive: Option<Entity>,
 }
 
 impl HornetsSystem {
@@ -78,6 +79,7 @@ impl HornetsSystem {
             reader_id,
             bee_texture: None,
             swatter: None,
+            hive: None,
         }
     }
 }
@@ -89,7 +91,7 @@ impl<'s> System<'s> for HornetsSystem {
         Read<'s, AssetStorage<Texture>>,
         Read<'s, AssetStorage<SpriteSheet>>,
         ReadExpect<'s, Loader>,
-        ReadStorage<'s, Bee>,
+        WriteStorage<'s, Bee>,
         WriteStorage<'s, UiTransform>,
         Write<'s, CurrentLevelScoreResource>,
         Read<'s, EventChannel<UiEvent>>,
@@ -110,7 +112,7 @@ impl<'s> System<'s> for HornetsSystem {
             texture_storage,
             sheet_storage,
             loader,
-            bee_storage,
+            mut bee_storage,
             mut ui_transform_storage,
             mut score,
             events,
@@ -123,6 +125,8 @@ impl<'s> System<'s> for HornetsSystem {
             dimensions,
         ): Self::SystemData,
     ) {
+        let mut rng = rand::thread_rng();
+
         // All indexes in this ability will be removed from active_abilities
         let mut should_be_deactivated_abilities: Vec<usize> = Vec::new();
 
@@ -130,13 +134,13 @@ impl<'s> System<'s> for HornetsSystem {
         for (index, ability) in abilities.available_abilities.iter().enumerate() {
             // If that ability is active
             if abilities.active_abilities.contains(&index) {
+                let mut mouse_pos = input.mouse_position().unwrap_or((0., 0.));
+
+                // Mouse pos height is determined from top left instead of bottom left so we have to flip this.
+                mouse_pos.1 = dimensions.height() - mouse_pos.1;
+
                 match ability.info.ability_type {
                     AbilityType::FlySwatter => {
-                        let mut mouse_pos = input.mouse_position().unwrap_or((0., 0.));
-
-                        // Mouse pos height is determined from top left instead of bottom left so we have to flip this.
-                        mouse_pos.1 = dimensions.height() - mouse_pos.1;
-
                         // If the ability is about to expire
                         if ability.current_state.percentage < 0.05 {
                             // Delete the swatter.
@@ -148,9 +152,18 @@ impl<'s> System<'s> for HornetsSystem {
                                 self.swatter = None;
                             }
                         } else if let Some(fly_swatter) = self.swatter {
-                            let ui_transform = ui_transform_storage.get_mut(fly_swatter).unwrap();
+                            let (swatter_x, swatter_y) = {
+                                let swatter_ui_transform =
+                                    ui_transform_storage.get_mut(fly_swatter).unwrap();
 
-                            *ui_transform = create_swatter_ui_transform(mouse_pos.0, mouse_pos.1);
+                                *swatter_ui_transform = create_ui_transform(
+                                    mouse_pos.0,
+                                    mouse_pos.1,
+                                    SWATTER_HEIGHT_AND_WIDTH,
+                                );
+
+                                (mouse_pos.0, mouse_pos.1)
+                            };
 
                             if input.mouse_button_is_down(MouseButton::Left) {
                                 // Can only use swatter once.
@@ -159,13 +172,6 @@ impl<'s> System<'s> for HornetsSystem {
                                     .delete(fly_swatter)
                                     .expect("Couldn't delete big swatter!");
                                 self.swatter = None;
-
-                                let swatter_x =
-                                    ui_transform.pixel_x() - (SWATTER_HEIGHT_AND_WIDTH * 0.5);
-                                let swatter_y =
-                                    ui_transform.pixel_y() - (SWATTER_HEIGHT_AND_WIDTH * 0.5);
-
-                                let bee_radius = BEE_SPRITE_HEIGHT_AND_WIDTH * 0.5;
 
                                 play_sound_system(
                                     FLY_SWAT_SOUND,
@@ -177,14 +183,13 @@ impl<'s> System<'s> for HornetsSystem {
                                 for (entity, _bee, bee_ui_transform) in
                                     (&entities, &bee_storage, &ui_transform_storage).join()
                                 {
-                                    if point_in_rect(
+                                    if distance_between_points(
+                                        swatter_x,
+                                        swatter_y,
                                         bee_ui_transform.pixel_x(),
                                         bee_ui_transform.pixel_y(),
-                                        swatter_x - bee_radius,
-                                        swatter_y - bee_radius,
-                                        swatter_x + SWATTER_HEIGHT_AND_WIDTH + bee_radius,
-                                        swatter_y + SWATTER_HEIGHT_AND_WIDTH + bee_radius,
-                                    ) {
+                                    ) <= SWATTER_HEIGHT_AND_WIDTH * 0.5
+                                    {
                                         // Delete the bee
                                         entities.delete(entity).expect("Couldn't delete bee.");
 
@@ -202,8 +207,11 @@ impl<'s> System<'s> for HornetsSystem {
                                 0,
                             );
 
-                            let ui_transform =
-                                create_swatter_ui_transform(mouse_pos.0, mouse_pos.1);
+                            let ui_transform = create_ui_transform(
+                                mouse_pos.0,
+                                mouse_pos.1,
+                                SWATTER_HEIGHT_AND_WIDTH,
+                            );
 
                             self.swatter = Some(
                                 lazy.create_entity(&entities)
@@ -227,6 +235,94 @@ impl<'s> System<'s> for HornetsSystem {
 
                             // Increase the score
                             score.score += 1;
+                        }
+                    }
+                    AbilityType::HiveTrap => {
+                        // If the ability is about to expire
+                        if ability.current_state.percentage < 0.05 {
+                            // Delete the hive.
+                            if let Some(swatter) = self.swatter {
+                                entities
+                                    .delete(swatter)
+                                    .expect("Couldn't delete hive trap!");
+
+                                self.swatter = None;
+                            }
+                        } else if let Some(hive_trap) = self.hive {
+                            let (hive_trap_x, hive_trap_y) = {
+                                let hive_trap_transform =
+                                    ui_transform_storage.get_mut(hive_trap).unwrap();
+
+                                *hive_trap_transform = create_ui_transform(
+                                    mouse_pos.0,
+                                    mouse_pos.1,
+                                    HIVE_HEIGHT_AND_WIDTH,
+                                );
+
+                                (mouse_pos.0, mouse_pos.1)
+                            };
+
+                            if input.mouse_button_is_down(MouseButton::Left) {
+                                // Can only use hive once.
+                                should_be_deactivated_abilities.push(index);
+                                entities
+                                    .delete(hive_trap)
+                                    .expect("Couldn't delete hive trap!");
+                                self.hive = None;
+
+                                play_sound_system(
+                                    HIVE_TRAP_SOUND,
+                                    &sounds,
+                                    &audio_storage,
+                                    &audio_output,
+                                );
+
+                                for (bee, bee_ui_transform) in
+                                    (&mut bee_storage, &mut ui_transform_storage).join()
+                                {
+                                    // If the bee is nearby
+                                    if distance_between_points(
+                                        hive_trap_x,
+                                        hive_trap_y,
+                                        bee_ui_transform.pixel_x(),
+                                        bee_ui_transform.pixel_y(),
+                                    ) <= 200.0
+                                    {
+                                        // Move the bee close to the hive
+                                        *bee_ui_transform = create_ui_transform(
+                                            hive_trap_x + rng.gen_range(-10., 10.),
+                                            hive_trap_y + rng.gen_range(-10., 10.),
+                                            BEE_SPRITE_HEIGHT_AND_WIDTH,
+                                        );
+
+                                        // Extend the bee's lifetime
+                                        bee.expiration_frame += rng.gen_range(60, 120);
+                                    }
+                                }
+                            }
+                        } else {
+                            let hive_trap = load_sprite_system(
+                                &texture_storage,
+                                &sheet_storage,
+                                &loader,
+                                "hive_trap.png",
+                                0,
+                            );
+
+                            let ui_transform = create_ui_transform(
+                                mouse_pos.0,
+                                mouse_pos.1,
+                                HIVE_HEIGHT_AND_WIDTH,
+                            );
+
+                            self.hive = Some(
+                                lazy.create_entity(&entities)
+                                    // Tag entity with AbilityBarComponent so it gets deleted on close.
+                                    .with(AbilityBarComponent)
+                                    .with(UiImage::Sprite(hive_trap))
+                                    .with(ui_transform)
+                                    .build(),
+                            );
                         }
                     }
                     _ => {}
@@ -261,7 +357,6 @@ impl<'s> System<'s> for HornetsSystem {
             }
         }
 
-        let mut rng = rand::thread_rng();
         if let Some(bee_sprite) = &self.bee_texture {
             // Spawn new bees and delete old ones
             if every_n_seconds(0.5, &*time) {
@@ -275,14 +370,9 @@ impl<'s> System<'s> for HornetsSystem {
 
                     lazy.create_entity(&entities)
                         .with(UiImage::Sprite(bee_sprite.clone()))
-                        .with(UiTransform::new(
-                            pos_x.to_string(),
-                            Anchor::BottomLeft,
-                            Anchor::Middle,
+                        .with(create_ui_transform(
                             pos_x,
                             pos_y,
-                            0.,
-                            BEE_SPRITE_HEIGHT_AND_WIDTH,
                             BEE_SPRITE_HEIGHT_AND_WIDTH,
                         ))
                         .with(Bee {

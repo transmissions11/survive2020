@@ -81,6 +81,7 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
                 HornetsSystemDesc {
                     bee_texture: None,
                     swatter: None,
+                    hive: None,
                 }
                 .build(world),
                 "hornets",
