@@ -8,7 +8,7 @@ use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::systems::load_sprite_system;
 use amethyst::assets::Loader;
 use amethyst::core::ecs::shrev::EventChannel;
-use amethyst::core::Time;
+use amethyst::core::{Time, Transform};
 use amethyst::derive::SystemDesc;
 use amethyst::ecs::prelude::*;
 use amethyst::renderer::{SpriteRender, SpriteSheet, Texture};
@@ -30,7 +30,7 @@ use amethyst::{
 
 pub const BEE_SPRITE_HEIGHT_AND_WIDTH: f32 = 40.0;
 
-pub const SWATTER_HEIGHT_AND_WIDTH: f32 = 300.0;
+pub const SWATTER_HEIGHT_AND_WIDTH: f32 = 240.0;
 
 #[derive(Default)]
 pub struct Bee {
@@ -270,7 +270,7 @@ impl<'s> System<'s> for HornetsSystem {
                 let mut bees_left_to_spawn = bees_to_spawn;
 
                 while bees_left_to_spawn != 0 {
-                    let pos_x = rng.gen_range(150., 450.);
+                    let pos_x = rng.gen_range(10., 590.);
                     let pos_y = rng.gen_range(100., 500.);
 
                     lazy.create_entity(&entities)
