@@ -3,7 +3,7 @@ pub mod resources;
 pub mod states;
 pub mod systems;
 
-use amethyst::core::Time;
+use amethyst::core::{Time, Transform};
 use amethyst::renderer::palette::Srgba;
 use amethyst::ui::{FontHandle, TtfFormat, UiImage};
 use amethyst::{
@@ -120,4 +120,27 @@ pub fn create_ui_color_from_rgba(r: u32, g: u32, b: u32, a: f32) -> UiImage {
 /// Returns true if the `time.frame_number()` is a multiple of 60 * n
 pub fn every_n_seconds(n: f64, time: &Time) -> bool {
     (time.frame_number() as f64 % (60. * n)) == 0.0
+}
+
+/// Keeps a number in min max bounds.
+pub fn bound(num: f32, min: f32, max: f32) -> f32 {
+    if num < min {
+        return min;
+    }
+
+    if num > max {
+        return max;
+    }
+
+    num
+}
+
+// Prepend to a transform's x translation in some bounds (must be greater than min and smaller than max)
+pub fn bound_transform_x_prepend(transform: &mut Transform, x: f32, min: f32, max: f32) {
+    transform.set_translation_x(bound(transform.translation().x + x, min, max));
+}
+
+// Prepend to a transform's y translation in some bounds (must be greater than min and smaller than max)
+pub fn bound_transform_y_prepend(transform: &mut Transform, y: f32, min: f32, max: f32) {
+    transform.set_translation_y(bound(transform.translation().y + y, min, max));
 }

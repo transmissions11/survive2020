@@ -8,7 +8,8 @@ use crate::resources::high_scores::highscores_keys::WILDFIRES;
 use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::states::{
     create_optional_systems_dispatcher, init_level_title, init_timer_and_score_text,
-    return_to_main_menu_on_escape, update_timer_and_set_high_score, LevelAsset, TimerComponent,
+    return_to_main_menu_on_escape, run_systems, update_timer_and_set_high_score, LevelAsset,
+    TimerComponent,
 };
 use amethyst::shred::Dispatcher;
 
@@ -47,7 +48,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         // );
 
         self.dispatcher = create_optional_systems_dispatcher(world, |builder, _| {
-            builder.add(WildfiresSystem, "wildfires", &[])
+            builder.add(WildfiresSystem::default(), "wildfires", &[])
         });
     }
 
@@ -67,6 +68,8 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         let world = &mut data.world;
+
+        run_systems(world, &mut self.dispatcher);
 
         update_timer_and_set_high_score(*world, &mut self.seconds_elapsed, MAX_SECONDS, WILDFIRES)
     }
