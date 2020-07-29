@@ -1,11 +1,10 @@
-use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::states::LevelComponent;
 use crate::systems::{distance_between_points, load_sprite_system};
 use crate::{bound_transform_x_prepend, bound_transform_y_prepend, every_n_seconds};
 use amethyst::assets::{AssetStorage, Loader};
 use amethyst::core::ecs::{
     Component, DenseVecStorage, Entities, Entity, Join, LazyUpdate, Read, ReadExpect, ReadStorage,
-    Write, WriteStorage,
+    WriteStorage,
 };
 use amethyst::core::{Time, Transform};
 use amethyst::input::{InputHandler, StringBindings};
@@ -55,7 +54,6 @@ pub struct WildfiresSystem {
 impl<'s> System<'s> for WildfiresSystem {
     type SystemData = (
         Entities<'s>,
-        Write<'s, CurrentLevelScoreResource>,
         Read<'s, Time>,
         Read<'s, LazyUpdate>,
         Read<'s, AssetStorage<Texture>>,
@@ -72,7 +70,6 @@ impl<'s> System<'s> for WildfiresSystem {
         &mut self,
         (
             entities,
-            mut score,
             time,
             lazy,
             texture_storage,
@@ -107,11 +104,6 @@ impl<'s> System<'s> for WildfiresSystem {
                             fire_transform.translation().y,
                         ) <= (0.5 * FIRE_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
                         {
-                            if score.score < 30 {
-                                score.score = 0;
-                            } else {
-                                score.score -= 30;
-                            }
                         }
 
                         // If the fire is close to a droplet
@@ -212,10 +204,10 @@ impl<'s> System<'s> for WildfiresSystem {
                     if input.key_is_down(VirtualKeyCode::Up)
                         || input.key_is_down(VirtualKeyCode::Space)
                     {
-                        let mut droplet_sprite = None;
+                        let droplet_sprite;
 
                         if let Some(sprite) = &self.droplet_sprite {
-                            droplet_sprite = Some(sprite.clone());
+                            droplet_sprite = sprite.clone();
                         } else {
                             let new_sprite = load_sprite_system(
                                 &texture_storage,
@@ -227,7 +219,7 @@ impl<'s> System<'s> for WildfiresSystem {
 
                             self.droplet_sprite = Some(new_sprite.clone());
 
-                            droplet_sprite = Some(new_sprite);
+                            droplet_sprite = new_sprite;
                         }
 
                         let mut droplet_transform = (*firefighter_transform).clone();
@@ -236,7 +228,7 @@ impl<'s> System<'s> for WildfiresSystem {
                         droplet_transform.move_right(15.);
 
                         lazy.create_entity(&*entities)
-                            .with(droplet_sprite.unwrap())
+                            .with(droplet_sprite)
                             .with(droplet_transform)
                             .with(Droplet { seconds_alive: 0. })
                             .with(LevelComponent)
