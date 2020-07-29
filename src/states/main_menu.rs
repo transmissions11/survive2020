@@ -2,11 +2,11 @@ use crate::resources::high_scores::highscores_keys::{HORNETS, WILDFIRES};
 use crate::resources::high_scores::load_scores;
 use crate::states::hornets::HornetState;
 use crate::states::wildfires::WildfireState;
-use crate::systems::ability_bar::AbilityBarComponent;
 use crate::*;
 
 use crate::audio::initialise_audio;
-use crate::states::{init_camera, init_level_title, LevelAsset, TimerComponent};
+use crate::states::{init_camera, init_level_title, LevelComponent, TimerComponent};
+use crate::systems::wildfires::Droplet;
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]
@@ -87,9 +87,9 @@ impl SimpleState for MainMenuState {
         let world = data.world;
 
         // Register the components we won't use in any systems
-        world.register::<LevelAsset>();
-        world.register::<AbilityBarComponent>();
+        world.register::<LevelComponent>();
         world.register::<TimerComponent>();
+        world.register::<Droplet>();
 
         // Init 2d camera
         init_camera(world);
@@ -125,7 +125,7 @@ impl SimpleState for MainMenuState {
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        delete_all_entities_with_component::<LevelAsset>(world);
+        delete_all_entities_with_component::<LevelComponent>(world);
 
         delete_level_and_highscore_buttons(world, &self.hornets_and_highscore_button);
         delete_level_and_highscore_buttons(world, &self.wildfires_and_highscore_button);

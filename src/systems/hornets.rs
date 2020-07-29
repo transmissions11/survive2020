@@ -17,7 +17,8 @@ use rand::Rng;
 use crate::audio::sound_keys::{BEE_TAP_SOUND, BUG_SPRAY_SOUND, FLY_SWAT_SOUND, HIVE_TRAP_SOUND};
 use crate::audio::{play_sound_system, SoundsResource};
 use crate::resources::abilities::{AbilitiesResource, AbilityType};
-use crate::systems::ability_bar::{AbilityBarComponent, RemoveItem};
+use crate::states::LevelComponent;
+use crate::systems::ability_bar::RemoveItem;
 use amethyst::input::{InputHandler, StringBindings};
 use amethyst::prelude::Builder;
 use amethyst::window::ScreenDimensions;
@@ -215,8 +216,8 @@ impl<'s> System<'s> for HornetsSystem {
 
                             self.swatter = Some(
                                 lazy.create_entity(&entities)
-                                    // Tag entity with AbilityBarComponent so it gets deleted on close.
-                                    .with(AbilityBarComponent)
+                                    // Tag entity with LevelComponent so it gets deleted on close.
+                                    .with(LevelComponent)
                                     .with(UiImage::Sprite(swatter_sprite))
                                     .with(ui_transform)
                                     .build(),
@@ -317,8 +318,8 @@ impl<'s> System<'s> for HornetsSystem {
 
                             self.hive = Some(
                                 lazy.create_entity(&entities)
-                                    // Tag entity with AbilityBarComponent so it gets deleted on close.
-                                    .with(AbilityBarComponent)
+                                    // Tag entity with LevelComponent so it gets deleted on close.
+                                    .with(LevelComponent)
                                     .with(UiImage::Sprite(hive_trap))
                                     .with(ui_transform)
                                     .build(),
@@ -375,6 +376,7 @@ impl<'s> System<'s> for HornetsSystem {
                             pos_y,
                             BEE_SPRITE_HEIGHT_AND_WIDTH,
                         ))
+                        .with(LevelComponent)
                         .with(Bee {
                             expiration_frame: time.frame_number() + rng.gen_range(50, 180),
                         })

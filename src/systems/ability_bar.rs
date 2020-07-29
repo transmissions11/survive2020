@@ -1,6 +1,7 @@
 use crate::resources::abilities::AbilitiesResource;
+use crate::states::LevelComponent;
 use crate::*;
-use amethyst::core::ecs::{Component, DenseVecStorage, VecStorage, World};
+use amethyst::core::ecs::{Component, DenseVecStorage, World};
 use amethyst::core::shrev::EventChannel;
 use amethyst::core::Transform;
 use amethyst::renderer::SpriteRender;
@@ -37,18 +38,8 @@ impl Component for ProgressBar {
     type Storage = DenseVecStorage<Self>;
 }
 
-/// Used to tag any entities apart of the ability bar.
-#[derive(Default)]
-pub struct AbilityBarComponent;
-impl Component for AbilityBarComponent {
-    type Storage = VecStorage<Self>;
-}
-
 /// Creates an ability bar based off of a vector of abilities. Updates the Abilities resource with the new abilities.
 pub fn init_abilities_bar(world: &mut World, mut abilities: AbilitiesResource) {
-    // Delete past ability bar
-    delete_all_entities_with_component::<AbilityBarComponent>(world);
-
     let dimensions = (*world.read_resource::<ScreenDimensions>()).clone();
 
     let mut base_offset = 0.0;
@@ -120,10 +111,10 @@ pub fn create_ability_item(
             ability_index: index,
             x_offset: x_padding,
         })
-        .with(AbilityBarComponent)
+        .with(LevelComponent)
         .build();
 
-    let button_parent = world.create_entity().with(AbilityBarComponent).build();
+    let button_parent = world.create_entity().with(LevelComponent).build();
 
     let (_id, button) = UiButtonBuilder::<(), u32>::new(String::new())
         .with_anchor(Anchor::BottomLeft)
@@ -146,7 +137,7 @@ pub fn create_ability_item(
         .create_entity()
         .with(background_transform.clone())
         .with(background)
-        .with(AbilityBarComponent)
+        .with(LevelComponent)
         .build();
 
     // Create the icon in the upper center of the frame.
@@ -161,7 +152,7 @@ pub fn create_ability_item(
         .create_entity()
         .with(icon_transform)
         .with(icon)
-        .with(AbilityBarComponent)
+        .with(LevelComponent)
         .build();
 
     button

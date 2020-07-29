@@ -9,6 +9,7 @@ use amethyst::core::Time;
 use amethyst::input::{is_key_down, VirtualKeyCode};
 
 use crate::{get_main_font, load_sprite};
+use amethyst::renderer::Transparent;
 use amethyst::ui::{Anchor, LineMode, UiText, UiTransform};
 use amethyst::{
     core::transform::Transform,
@@ -121,6 +122,7 @@ pub fn init_timer_and_score_text(world: &mut World, max_seconds: f32) {
     world
         .create_entity()
         .with(TimerComponent)
+        .with(LevelComponent)
         .with(transform)
         .with(ui_text)
         .build();
@@ -185,9 +187,9 @@ pub fn return_to_main_menu_on_escape(event: StateEvent) -> SimpleTrans {
     }
 }
 
-/// Tag a component as level assets (level title and background)
-pub struct LevelAsset;
-impl Component for LevelAsset {
+/// Tag a components that should be deleted when the level ends.
+pub struct LevelComponent;
+impl Component for LevelComponent {
     type Storage = DenseVecStorage<Self>;
 }
 
@@ -210,7 +212,7 @@ pub fn init_level_background(world: &mut World, filename: &str) {
 
     world
         .create_entity()
-        .with(LevelAsset)
+        .with(LevelComponent)
         .with(transform)
         .with(background)
         .build();
@@ -227,8 +229,9 @@ pub fn init_level_title(world: &mut World, filename: &str) {
 
     world
         .create_entity()
-        .with(LevelAsset)
+        .with(LevelComponent)
         .with(transform)
         .with(sprite)
+        .with(Transparent)
         .build();
 }

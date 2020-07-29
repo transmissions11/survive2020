@@ -1,15 +1,14 @@
 use crate::*;
 
-use crate::systems::ability_bar::AbilityBarComponent;
 use crate::systems::wildfires::WildfiresSystem;
 
 use crate::resources::high_scores::highscores_keys::WILDFIRES;
 
 use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::states::{
-    create_optional_systems_dispatcher, init_level_title, init_timer_and_score_text,
-    return_to_main_menu_on_escape, run_systems, update_timer_and_set_high_score, LevelAsset,
-    TimerComponent,
+    create_optional_systems_dispatcher, init_level_background, init_level_title,
+    init_timer_and_score_text, return_to_main_menu_on_escape, run_systems,
+    update_timer_and_set_high_score, LevelComponent,
 };
 use amethyst::shred::Dispatcher;
 
@@ -25,12 +24,14 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        // Init the current level score.
-        world.insert(CurrentLevelScoreResource::default());
+        init_level_background(world, "wildfires_background.png");
 
         init_level_title(world, "wildfires_title.png");
 
         init_timer_and_score_text(world, MAX_SECONDS);
+
+        // Init the current level score.
+        world.insert(CurrentLevelScoreResource::default());
 
         // let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
         // init_abilities_bar(
@@ -53,9 +54,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     }
 
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
-        delete_all_entities_with_component::<AbilityBarComponent>(data.world);
-        delete_all_entities_with_component::<TimerComponent>(data.world);
-        delete_all_entities_with_component::<LevelAsset>(data.world);
+        delete_all_entities_with_component::<LevelComponent>(data.world);
     }
 
     fn handle_event(
