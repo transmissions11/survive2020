@@ -6,7 +6,7 @@ use crate::*;
 
 use crate::audio::initialise_audio;
 use crate::states::{init_camera, init_level_title, LevelComponent, TimerComponent};
-use crate::systems::wildfires::{Droplet, Fire};
+
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]

@@ -25,8 +25,8 @@ pub const ROTATION_SPEED: f32 = 0.07;
 pub const PLAYER_HEIGHT_AND_WIDTH: f32 = 100.0;
 
 pub const DROPLET_HEIGHT_AND_WIDTH: f32 = 20.0;
-pub const DROPLET_SPEED: f32 = 100.0;
-pub const DROPLET_MAX_SECONDS_ALIVE: f32 = 1.25;
+pub const DROPLET_SPEED: f32 = 140.0;
+pub const DROPLET_MAX_SECONDS_ALIVE: f32 = 0.5;
 
 pub const FIRE_HEIGHT_AND_WIDTH: f32 = 50.0;
 
@@ -120,7 +120,7 @@ impl<'s> System<'s> for WildfiresSystem {
 
                     transform.move_up(DROPLET_SPEED * time.delta_seconds());
 
-                    transform.prepend_translation_x(rng.gen_range(-3.0, 3.0));
+                    transform.prepend_translation_x(rng.gen_range(-6.0, 6.0));
 
                     if droplet.seconds_alive >= DROPLET_MAX_SECONDS_ALIVE {
                         entities.delete(entity).expect("Couldn't delete droplet!");
