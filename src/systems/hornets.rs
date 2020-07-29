@@ -4,7 +4,7 @@ use amethyst::core::ecs::{
 
 use crate::every_n_seconds;
 use crate::resources::high_scores::CurrentLevelScoreResource;
-use crate::systems::load_sprite_system;
+use crate::systems::{distance_between_points, load_sprite_system};
 use amethyst::assets::Loader;
 use amethyst::core::ecs::shrev::EventChannel;
 use amethyst::core::Time;
@@ -41,10 +41,6 @@ pub struct Bee {
 }
 impl Component for Bee {
     type Storage = DenseVecStorage<Self>;
-}
-/// Calculates the distance between 2 points.
-fn distance_between_points(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
-    ((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1)).sqrt()
 }
 
 /// Create a UiTransform easily.

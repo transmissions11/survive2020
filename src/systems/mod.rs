@@ -7,6 +7,11 @@ pub mod ability_bar;
 pub mod hornets;
 pub mod wildfires;
 
+/// Calculates the distance between 2 points.
+fn distance_between_points(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
+    ((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1)).sqrt()
+}
+
 /// Load a sprite from a file and sprite number. Returns a SpriteRender.
 /// Will panic if filename does not contain an extension.
 pub fn load_sprite_system(

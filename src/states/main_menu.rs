@@ -6,7 +6,7 @@ use crate::*;
 
 use crate::audio::initialise_audio;
 use crate::states::{init_camera, init_level_title, LevelComponent, TimerComponent};
-use crate::systems::wildfires::Droplet;
+use crate::systems::wildfires::{Droplet, Fire};
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]
@@ -89,7 +89,6 @@ impl SimpleState for MainMenuState {
         // Register the components we won't use in any systems
         world.register::<LevelComponent>();
         world.register::<TimerComponent>();
-        world.register::<Droplet>();
 
         // Init 2d camera
         init_camera(world);
