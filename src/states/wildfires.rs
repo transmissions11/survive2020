@@ -68,6 +68,12 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         let world = &mut data.world;
 
+        {
+            // Set score to seconds elapsed
+            let mut score = world.write_resource::<CurrentLevelScoreResource>();
+            score.score = self.seconds_elapsed as u64;
+        }
+
         run_systems(world, &mut self.dispatcher);
 
         update_timer_and_set_high_score(*world, &mut self.seconds_elapsed, MAX_SECONDS, WILDFIRES)

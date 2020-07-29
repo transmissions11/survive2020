@@ -87,30 +87,50 @@ impl<'s> System<'s> for WildfiresSystem {
     ) {
         let mut rng = rand::thread_rng();
 
-        for (_, droplet_transform, droplet_entity) in
-            (&droplet_storage, &transform_storage, &entities).join()
-        {
-            for (_, fire_transform, fire_entity) in
-                (&fire_storage, &transform_storage, &entities).join()
+        if let Some(firefighter_entity) = &self.firefighter_entity {
+            // Fire collisions
             {
-                if distance_between_points(
-                    droplet_transform.translation().x,
-                    droplet_transform.translation().y,
-                    fire_transform.translation().x,
-                    fire_transform.translation().y,
-                ) <= (0.5 * FIRE_HEIGHT_AND_WIDTH) + (0.5 * DROPLET_HEIGHT_AND_WIDTH)
+                for (_, droplet_transform, droplet_entity) in
+                    (&droplet_storage, &transform_storage, &entities).join()
                 {
-                    entities.delete(fire_entity).expect("Couldn't delete fire!");
-                    entities
-                        .delete(droplet_entity)
-                        .expect("Couldn't delete droplet!");
+                    for (_, fire_transform, fire_entity) in
+                        (&fire_storage, &transform_storage, &entities).join()
+                    {
+                        let firefighter_transform =
+                            transform_storage.get(*firefighter_entity).unwrap();
 
-                    score.score += 1;
+                        // If the fire is touching the player
+                        if distance_between_points(
+                            firefighter_transform.translation().x,
+                            firefighter_transform.translation().y,
+                            fire_transform.translation().x,
+                            fire_transform.translation().y,
+                        ) <= (0.5 * FIRE_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
+                        {
+                            if score.score < 30 {
+                                score.score = 0;
+                            } else {
+                                score.score -= 30;
+                            }
+                        }
+
+                        // If the fire is close to a droplet
+                        if distance_between_points(
+                            droplet_transform.translation().x,
+                            droplet_transform.translation().y,
+                            fire_transform.translation().x,
+                            fire_transform.translation().y,
+                        ) <= (0.5 * FIRE_HEIGHT_AND_WIDTH) + (0.5 * DROPLET_HEIGHT_AND_WIDTH)
+                        {
+                            entities.delete(fire_entity).expect("Couldn't delete fire!");
+                            entities
+                                .delete(droplet_entity)
+                                .expect("Couldn't delete droplet!");
+                        }
+                    }
                 }
             }
-        }
 
-        if let Some(firefighter_entity) = &self.firefighter_entity {
             // Droplet physics
             {
                 for (droplet, transform, entity) in
@@ -128,10 +148,10 @@ impl<'s> System<'s> for WildfiresSystem {
                 }
             }
 
+            let firefighter_transform = transform_storage.get_mut(*firefighter_entity).unwrap();
+
             // Movement and shooting
             {
-                let transform = transform_storage.get_mut(*firefighter_entity).unwrap();
-
                 let min_height_and_width = PLAYER_HEIGHT_AND_WIDTH * 0.5;
 
                 let max_height = dimensions.height() - PLAYER_HEIGHT_AND_WIDTH * 0.5;
@@ -142,7 +162,7 @@ impl<'s> System<'s> for WildfiresSystem {
                 {
                     if input.key_is_down(VirtualKeyCode::W) {
                         bound_transform_y_prepend(
-                            transform,
+                            firefighter_transform,
                             MOVEMENT_SPEED,
                             min_height_and_width,
                             max_height,
@@ -150,7 +170,7 @@ impl<'s> System<'s> for WildfiresSystem {
                     }
                     if input.key_is_down(VirtualKeyCode::S) {
                         bound_transform_y_prepend(
-                            transform,
+                            firefighter_transform,
                             -MOVEMENT_SPEED,
                             min_height_and_width,
                             max_height,
@@ -159,7 +179,7 @@ impl<'s> System<'s> for WildfiresSystem {
 
                     if input.key_is_down(VirtualKeyCode::A) {
                         bound_transform_x_prepend(
-                            transform,
+                            firefighter_transform,
                             -MOVEMENT_SPEED,
                             min_height_and_width,
                             max_width,
@@ -168,7 +188,7 @@ impl<'s> System<'s> for WildfiresSystem {
 
                     if input.key_is_down(VirtualKeyCode::D) {
                         bound_transform_x_prepend(
-                            transform,
+                            firefighter_transform,
                             MOVEMENT_SPEED,
                             min_height_and_width,
                             max_width,
@@ -179,11 +199,11 @@ impl<'s> System<'s> for WildfiresSystem {
                 // Rotation keys
                 {
                     if input.key_is_down(VirtualKeyCode::Left) {
-                        transform.rotate_2d(-ROTATION_SPEED);
+                        firefighter_transform.rotate_2d(-ROTATION_SPEED);
                     }
 
                     if input.key_is_down(VirtualKeyCode::Right) {
-                        transform.rotate_2d(ROTATION_SPEED);
+                        firefighter_transform.rotate_2d(ROTATION_SPEED);
                     }
                 }
 
@@ -210,7 +230,7 @@ impl<'s> System<'s> for WildfiresSystem {
                             droplet_sprite = Some(new_sprite);
                         }
 
-                        let mut droplet_transform = (*transform).clone();
+                        let mut droplet_transform = (*firefighter_transform).clone();
 
                         droplet_transform.move_up(PLAYER_HEIGHT_AND_WIDTH * 0.5);
                         droplet_transform.move_right(15.);
@@ -284,7 +304,7 @@ impl<'s> System<'s> for WildfiresSystem {
 
             let mut transform = Transform::default();
 
-            transform.set_translation_xyz(dimensions.height() * 0.5, dimensions.width() * 0.5, 0.0);
+            transform.set_translation_xyz(dimensions.height() * 0.5, dimensions.width() * 0.5, 3.0);
 
             self.firefighter_entity = Some(
                 lazy.create_entity(&*entities)
