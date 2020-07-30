@@ -26,7 +26,7 @@ pub const PLAYER_HEIGHT_AND_WIDTH: f32 = 100.0;
 
 pub const DROPLET_HEIGHT_AND_WIDTH: f32 = 20.0;
 pub const DROPLET_SPEED: f32 = 140.0;
-pub const DROPLET_MAX_SECONDS_ALIVE: f32 = 0.5;
+pub const DROPLET_MAX_SECONDS_ALIVE: f32 = 0.7;
 
 pub const FIRE_HEIGHT_AND_WIDTH: f32 = 50.0;
 
@@ -109,7 +109,7 @@ impl<'s> System<'s> for WildfiresSystem {
                         level_state.stepped_in_fire_times += 1;
                     }
 
-                    for (_, droplet_transform, droplet_entity) in
+                    'inner: for (_, droplet_transform, droplet_entity) in
                         (&droplet_storage, &transform_storage, &entities).join()
                     {
                         // If the fire is close to a droplet
@@ -126,6 +126,8 @@ impl<'s> System<'s> for WildfiresSystem {
                                 .expect("Couldn't delete droplet!");
 
                             level_state.current_fires = level_state.current_fires.saturating_sub(1);
+
+                            break 'inner;
                         }
                     }
                 }
