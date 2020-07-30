@@ -1,5 +1,5 @@
 use crate::states::wildfires::WildfireStateResource;
-use crate::states::LevelComponent;
+use crate::states::{LevelComponent, LevelSecondsResource};
 use crate::systems::{distance_between_points, load_sprite_system};
 use crate::{bound_transform_x_prepend, bound_transform_y_prepend, every_n_seconds};
 use amethyst::assets::{AssetStorage, Loader};
@@ -56,6 +56,7 @@ impl<'s> System<'s> for WildfiresSystem {
     type SystemData = (
         Entities<'s>,
         Write<'s, WildfireStateResource>,
+        Read<'s, LevelSecondsResource>,
         Read<'s, Time>,
         Read<'s, LazyUpdate>,
         Read<'s, AssetStorage<Texture>>,
@@ -73,6 +74,7 @@ impl<'s> System<'s> for WildfiresSystem {
         (
             entities,
             mut level_state,
+            level_seconds,
             time,
             lazy,
             texture_storage,
@@ -248,7 +250,9 @@ impl<'s> System<'s> for WildfiresSystem {
             {
                 if let Some(fire_sprite) = &self.fire_sprite {
                     if every_n_seconds(0.7, &*time) {
-                        let fires_to_spawn = rng.gen_range(1, 3);
+                        // Fires to spawn is from 1 to (2 + however many chunks of 30 seconds have gone by).
+                        let fires_to_spawn =
+                            rng.gen_range(1, 2 + (level_seconds.seconds_elapsed / 30.) as u32);
 
                         let mut fires_left_to_spawn = fires_to_spawn;
 

@@ -24,7 +24,7 @@ use amethyst::{
 /// A component to tag a timer text component.
 #[derive(Default)]
 pub struct LevelSecondsResource {
-    seconds_elapsed: f32,
+    pub(crate) seconds_elapsed: f32,
 }
 impl Component for LevelSecondsResource {
     type Storage = DenseVecStorage<Self>;
