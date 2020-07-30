@@ -1,4 +1,5 @@
 use amethyst::audio::AudioBundle;
+use amethyst::audio::DjSystemDesc;
 use amethyst::input::{InputBundle, StringBindings};
 use amethyst::renderer::RenderFlat2D;
 use amethyst::{
@@ -8,8 +9,6 @@ use amethyst::{
     ui::{RenderUi, UiBundle},
     utils::application_root_dir,
 };
-
-use amethyst::audio::DjSystemDesc;
 
 use survive2020::audio::MusicResource;
 use survive2020::states::main_menu::MainMenuState;
