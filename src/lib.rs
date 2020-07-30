@@ -78,10 +78,10 @@ pub fn load_sprite(world: &mut World, filename: &str, sprite_number: usize) -> S
 pub fn delete_all_entities_with_component<T: Component>(world: &mut World) {
     let to_delete = {
         let mut result = Vec::new();
-        let titles = world.read_storage::<T>();
+        let components = world.read_storage::<T>();
         let entities = world.entities();
 
-        for (_title, entity) in (&titles, &entities).join() {
+        for (_component, entity) in (&components, &entities).join() {
             result.push(entity);
         }
 

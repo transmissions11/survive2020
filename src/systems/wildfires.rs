@@ -1,10 +1,11 @@
+use crate::states::wildfires::WildfireStateResource;
 use crate::states::LevelComponent;
 use crate::systems::{distance_between_points, load_sprite_system};
 use crate::{bound_transform_x_prepend, bound_transform_y_prepend, every_n_seconds};
 use amethyst::assets::{AssetStorage, Loader};
 use amethyst::core::ecs::{
     Component, DenseVecStorage, Entities, Entity, Join, LazyUpdate, Read, ReadExpect, ReadStorage,
-    WriteStorage,
+    Write, WriteStorage,
 };
 use amethyst::core::{Time, Transform};
 use amethyst::input::{InputHandler, StringBindings};
@@ -54,6 +55,7 @@ pub struct WildfiresSystem {
 impl<'s> System<'s> for WildfiresSystem {
     type SystemData = (
         Entities<'s>,
+        Write<'s, WildfireStateResource>,
         Read<'s, Time>,
         Read<'s, LazyUpdate>,
         Read<'s, AssetStorage<Texture>>,
@@ -70,6 +72,7 @@ impl<'s> System<'s> for WildfiresSystem {
         &mut self,
         (
             entities,
+            mut level_state,
             time,
             lazy,
             texture_storage,
@@ -87,25 +90,26 @@ impl<'s> System<'s> for WildfiresSystem {
         if let Some(firefighter_entity) = &self.firefighter_entity {
             // Fire collisions
             {
-                for (_, droplet_transform, droplet_entity) in
-                    (&droplet_storage, &transform_storage, &entities).join()
+                for (_, fire_transform, fire_entity) in
+                    (&fire_storage, &transform_storage, &entities).join()
                 {
-                    for (_, fire_transform, fire_entity) in
-                        (&fire_storage, &transform_storage, &entities).join()
+                    let firefighter_transform = transform_storage.get(*firefighter_entity).unwrap();
+
+                    // If the fire is touching the player
+                    if distance_between_points(
+                        firefighter_transform.translation().x,
+                        firefighter_transform.translation().y,
+                        fire_transform.translation().x,
+                        fire_transform.translation().y,
+                    ) <= (0.5 * FIRE_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
                     {
-                        let firefighter_transform =
-                            transform_storage.get(*firefighter_entity).unwrap();
+                        entities.delete(fire_entity).expect("Couldn't delete fire!");
+                        level_state.stepped_in_fire_times += 1;
+                    }
 
-                        // If the fire is touching the player
-                        if distance_between_points(
-                            firefighter_transform.translation().x,
-                            firefighter_transform.translation().y,
-                            fire_transform.translation().x,
-                            fire_transform.translation().y,
-                        ) <= (0.5 * FIRE_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
-                        {
-                        }
-
+                    for (_, droplet_transform, droplet_entity) in
+                        (&droplet_storage, &transform_storage, &entities).join()
+                    {
                         // If the fire is close to a droplet
                         if distance_between_points(
                             droplet_transform.translation().x,
@@ -118,6 +122,8 @@ impl<'s> System<'s> for WildfiresSystem {
                             entities
                                 .delete(droplet_entity)
                                 .expect("Couldn't delete droplet!");
+
+                            level_state.current_fires -= 1;
                         }
                     }
                 }
@@ -230,8 +236,8 @@ impl<'s> System<'s> for WildfiresSystem {
                         lazy.create_entity(&*entities)
                             .with(droplet_sprite)
                             .with(droplet_transform)
-                            .with(Droplet { seconds_alive: 0. })
                             .with(LevelComponent)
+                            .with(Droplet { seconds_alive: 0. })
                             .with(Transparent)
                             .build();
                     }
@@ -277,6 +283,7 @@ impl<'s> System<'s> for WildfiresSystem {
                                 .build();
 
                             fires_left_to_spawn -= 1;
+                            level_state.current_fires += 1;
                         }
                     }
                 } else {

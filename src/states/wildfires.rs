@@ -4,20 +4,47 @@ use crate::systems::wildfires::WildfiresSystem;
 
 use crate::resources::high_scores::highscores_keys::WILDFIRES;
 
-use crate::resources::high_scores::CurrentLevelScoreResource;
+use crate::resources::high_scores::{update_high_score_if_greater, CurrentLevelScoreResource};
+use crate::states::main_menu::MainMenuState;
 use crate::states::{
     create_optional_systems_dispatcher, init_level_background, init_level_title,
-    init_timer_and_score_text, return_to_main_menu_on_escape, run_systems,
-    update_timer_and_set_high_score, LevelComponent,
+    return_to_main_menu_on_escape, run_systems, LevelComponent,
 };
+
 use amethyst::shred::Dispatcher;
 
 pub const MAX_SECONDS: f32 = 60.0 * 5.0;
 
-#[derive(Default)]
+pub const MAX_FIRES: u64 = 60;
+
+/// A resource for storing some level state for the Wildfires level.
+pub struct WildfireStateResource {
+    pub current_fires: u64,
+    pub stepped_in_fire_times: u64,
+}
+
+impl Default for WildfireStateResource {
+    fn default() -> Self {
+        WildfireStateResource {
+            current_fires: 0,
+            stepped_in_fire_times: 0,
+        }
+    }
+}
+
 pub struct WildfireState<'a, 'b> {
     dispatcher: Option<Dispatcher<'a, 'b>>,
     seconds_elapsed: f32,
+    max_fires: u64,
+}
+impl<'a, 'b> Default for WildfireState<'a, 'b> {
+    fn default() -> Self {
+        WildfireState {
+            dispatcher: None,
+            seconds_elapsed: 0.,
+            max_fires: MAX_FIRES,
+        }
+    }
 }
 
 impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
@@ -28,10 +55,11 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
         init_level_title(world, "wildfires_title.png");
 
-        init_timer_and_score_text(world, MAX_SECONDS);
-
         // Init the current level score.
         world.insert(CurrentLevelScoreResource::default());
+
+        // Init the resource storing data about the player's progress on the level
+        world.insert(WildfireStateResource::default());
 
         // let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
         // init_abilities_bar(
@@ -54,7 +82,11 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     }
 
     fn on_stop(&mut self, data: StateData<'_, GameData<'_, '_>>) {
-        delete_all_entities_with_component::<LevelComponent>(data.world);
+        let world = data.world;
+
+        delete_all_entities_with_component::<LevelComponent>(world);
+
+        update_high_score_if_greater(world, WILDFIRES);
     }
 
     fn handle_event(
@@ -68,14 +100,29 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         let world = &mut data.world;
 
-        {
-            // Set score to seconds elapsed
+        // Update the max_fires field and the score
+        let current_fires = {
+            let state = world.read_resource::<WildfireStateResource>();
+
+            // Update the max amount of fires based on how many times the user has stepped in a fire
+            self.max_fires = MAX_FIRES.saturating_sub(state.stepped_in_fire_times);
+
             let mut score = world.write_resource::<CurrentLevelScoreResource>();
-            score.score = self.seconds_elapsed as u64;
+            // Update the level score based on seconds elapsed and fires stepped in
+            score.score = (self.seconds_elapsed as u64).saturating_sub(state.stepped_in_fire_times);
+
+            println!("stepped: {}", state.stepped_in_fire_times);
+            println!("{}/{}", state.current_fires, self.max_fires);
+
+            state.current_fires
+        };
+
+        // End the level if the player has not put out enough fires
+        if current_fires > self.max_fires {
+            Trans::Replace(Box::new(MainMenuState::default()))
+        } else {
+            run_systems(world, &mut self.dispatcher);
+            Trans::None
         }
-
-        run_systems(world, &mut self.dispatcher);
-
-        update_timer_and_set_high_score(*world, &mut self.seconds_elapsed, MAX_SECONDS, WILDFIRES)
     }
 }
