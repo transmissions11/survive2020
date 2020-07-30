@@ -11,7 +11,7 @@ use crate::resources::high_scores::CurrentLevelScoreResource;
 use crate::states::{
     create_optional_systems_dispatcher, init_level_background, init_level_title,
     init_timer_and_score_text, return_to_main_menu_on_escape, run_systems,
-    update_timer_and_set_high_score, LevelComponent,
+    update_timer_and_set_high_score, LevelComponent, LevelSecondsResource,
 };
 use crate::*;
 
@@ -19,7 +19,6 @@ pub const MAX_SECONDS: f32 = 60.0 * 2.5;
 
 #[derive(Default)]
 pub struct HornetState<'a, 'b> {
-    seconds_elapsed: f32,
     dispatcher: Option<Dispatcher<'a, 'b>>,
 }
 
@@ -33,8 +32,8 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
 
         init_timer_and_score_text(world, MAX_SECONDS);
 
-        // Init the current level score.
         world.insert(CurrentLevelScoreResource::default());
+        world.insert(LevelSecondsResource::default());
 
         let bug_spray_sprite = load_sprite(world, "bug_spray_ability.png", 0);
         let swatter_sprite = load_sprite(world, "swatter_ability.png", 0);
@@ -106,6 +105,6 @@ impl<'a, 'b> SimpleState for HornetState<'a, 'b> {
 
         run_systems(world, &mut self.dispatcher);
 
-        update_timer_and_set_high_score(world, &mut self.seconds_elapsed, MAX_SECONDS, HORNETS)
+        update_timer_and_set_high_score(world, MAX_SECONDS, HORNETS)
     }
 }

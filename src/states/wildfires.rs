@@ -8,7 +8,7 @@ use crate::resources::high_scores::{update_high_score_if_greater, CurrentLevelSc
 use crate::states::main_menu::MainMenuState;
 use crate::states::{
     create_optional_systems_dispatcher, init_level_background, init_level_title,
-    return_to_main_menu_on_escape, run_systems, LevelComponent,
+    return_to_main_menu_on_escape, run_systems, LevelComponent, LevelSecondsResource,
 };
 
 use amethyst::core::ecs::DenseVecStorage;
@@ -82,14 +82,12 @@ impl Default for WildfireStateResource {
 
 pub struct WildfireState<'a, 'b> {
     dispatcher: Option<Dispatcher<'a, 'b>>,
-    seconds_elapsed: f32,
     max_fires: u64,
 }
 impl<'a, 'b> Default for WildfireState<'a, 'b> {
     fn default() -> Self {
         WildfireState {
             dispatcher: None,
-            seconds_elapsed: 0.,
             max_fires: MAX_FIRES,
         }
     }
@@ -105,8 +103,8 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
         init_level_title(world, "wildfires_title.png");
 
-        // Init the current level score.
         world.insert(CurrentLevelScoreResource::default());
+        world.insert(LevelSecondsResource::default());
 
         // Init the resource storing data about the player's progress on the level
         world.insert(WildfireStateResource::default());
@@ -151,7 +149,13 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         let world = &mut data.world;
 
         // Update seconds elapsed
-        self.seconds_elapsed += world.read_resource::<Time>().delta_seconds();
+        let seconds_elapsed = {
+            let mut seconds = world.write_resource::<LevelSecondsResource>();
+
+            seconds.seconds_elapsed += world.read_resource::<Time>().delta_seconds();
+
+            seconds.seconds_elapsed
+        };
 
         // Update the max_fires field and the score
         let current_fires = {
@@ -162,7 +166,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
             let mut score = world.write_resource::<CurrentLevelScoreResource>();
             // Update the level score based on seconds elapsed and fires stepped in
-            score.score = (self.seconds_elapsed as u64).saturating_sub(state.stepped_in_fire_times);
+            score.score = (seconds_elapsed as u64).saturating_sub(state.stepped_in_fire_times);
 
             state.current_fires
         };

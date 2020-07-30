@@ -22,6 +22,15 @@ use amethyst::{
 };
 
 /// A component to tag a timer text component.
+#[derive(Default)]
+pub struct LevelSecondsResource {
+    seconds_elapsed: f32,
+}
+impl Component for LevelSecondsResource {
+    type Storage = DenseVecStorage<Self>;
+}
+
+/// A component to tag a timer text component.
 pub struct TimerComponent;
 impl Component for TimerComponent {
     type Storage = DenseVecStorage<Self>;
@@ -31,24 +40,28 @@ impl Component for TimerComponent {
 /// It also updates the score counter when updating the time.
 pub fn update_timer_and_set_high_score(
     world: &mut World,
-    elapsed_time: &mut f32,
     max_time: f32,
     high_score_key: &str,
 ) -> SimpleTrans {
-    // Old time + delta seconds.
-    let new_time = *elapsed_time + world.read_resource::<Time>().delta_seconds();
+    // Update seconds elapsed
+    let (new_time, old_time) = {
+        let mut seconds = world.write_resource::<LevelSecondsResource>();
+
+        let old_time = seconds.seconds_elapsed;
+
+        seconds.seconds_elapsed += world.read_resource::<Time>().delta_seconds();
+
+        (seconds.seconds_elapsed, old_time)
+    };
 
     let rounded_new_time = (new_time * 10.0).round() / 10.0;
-    let rounded_old_time = (*elapsed_time * 10.0).round() / 10.0;
+    let rounded_old_time = (old_time * 10.0).round() / 10.0;
 
     // Whether or not the rounded times changed
     let rounded_times_changed = rounded_new_time > rounded_old_time.floor();
 
     // If the timer is maxed out.
-    let level_is_over = *elapsed_time >= max_time;
-
-    // Update the elapsed time
-    *elapsed_time = new_time;
+    let level_is_over = new_time >= max_time;
 
     let timer_entity = {
         if rounded_times_changed || level_is_over {
