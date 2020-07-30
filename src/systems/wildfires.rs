@@ -250,9 +250,9 @@ impl<'s> System<'s> for WildfiresSystem {
             {
                 if let Some(fire_sprite) = &self.fire_sprite {
                     if every_n_seconds(0.7, &*time) {
-                        // Fires to spawn is from 1 to (2 + however many chunks of 30 seconds have gone by).
+                        // Fires to spawn is from 1 to (2 + however many chunks of 20 seconds have gone by).
                         let fires_to_spawn =
-                            rng.gen_range(1, 2 + (level_seconds.seconds_elapsed / 30.) as u32);
+                            rng.gen_range(1, 2 + (level_seconds.seconds_elapsed / 20.) as u32);
 
                         let mut fires_left_to_spawn = fires_to_spawn;
 
