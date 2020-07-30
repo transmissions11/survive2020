@@ -11,11 +11,59 @@ use crate::states::{
     return_to_main_menu_on_escape, run_systems, LevelComponent,
 };
 
+use amethyst::core::ecs::DenseVecStorage;
 use amethyst::shred::Dispatcher;
+use amethyst::ui::{Anchor, LineMode, UiText, UiTransform};
 
 pub const MAX_SECONDS: f32 = 60.0 * 5.0;
 
 pub const MAX_FIRES: u64 = 60;
+
+/// Tags a component as the wildfire state text.
+pub struct WildfiresStateTextComponent;
+impl Component for WildfiresStateTextComponent {
+    type Storage = DenseVecStorage<Self>;
+}
+
+fn init_wildfires_state_text(world: &mut World, max_fires: u64) {
+    let font = get_main_font(world);
+
+    let transform = UiTransform::new(
+        "timer_text".to_string(),
+        Anchor::TopMiddle,
+        Anchor::TopMiddle,
+        0.0,
+        -55.0,
+        0.0,
+        600.0,
+        50.0,
+    );
+    let ui_text = UiText::new(
+        font,
+        format!("0 FIRES / {} MAX", max_fires),
+        [1.0, 1.0, 1.0, 1.0],
+        25.0,
+        LineMode::Single,
+        Anchor::Middle,
+    );
+
+    world
+        .create_entity()
+        .with(WildfiresStateTextComponent)
+        .with(LevelComponent)
+        .with(transform)
+        .with(ui_text)
+        .build();
+}
+
+fn update_wildfire_state(world: &mut World, current_fires: u64, max_fires: u64) {
+    let mut ui_texts = world.write_storage::<UiText>();
+    let state_text_components = world.read_storage::<WildfiresStateTextComponent>();
+
+    for (ui_text, _) in (&mut ui_texts, &state_text_components).join() {
+        ui_text.text = format!("{} FIRES / {} MAX", current_fires, max_fires);
+    }
+}
 
 /// A resource for storing some level state for the Wildfires level.
 pub struct WildfireStateResource {
@@ -50,6 +98,8 @@ impl<'a, 'b> Default for WildfireState<'a, 'b> {
 impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
+
+        init_wildfires_state_text(world, self.max_fires);
 
         init_level_background(world, "wildfires_background.png");
 
@@ -100,6 +150,9 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         let world = &mut data.world;
 
+        // Update seconds elapsed
+        self.seconds_elapsed += world.read_resource::<Time>().delta_seconds();
+
         // Update the max_fires field and the score
         let current_fires = {
             let state = world.read_resource::<WildfireStateResource>();
@@ -111,9 +164,6 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
             // Update the level score based on seconds elapsed and fires stepped in
             score.score = (self.seconds_elapsed as u64).saturating_sub(state.stepped_in_fire_times);
 
-            println!("stepped: {}", state.stepped_in_fire_times);
-            println!("{}/{}", state.current_fires, self.max_fires);
-
             state.current_fires
         };
 
@@ -122,6 +172,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
             Trans::Replace(Box::new(MainMenuState::default()))
         } else {
             run_systems(world, &mut self.dispatcher);
+            update_wildfire_state(world, current_fires, self.max_fires);
             Trans::None
         }
     }

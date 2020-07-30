@@ -1,7 +1,7 @@
 use crate::resources::high_scores::highscores_keys::{HORNETS, WILDFIRES};
 use crate::resources::high_scores::load_scores;
 use crate::states::hornets::HornetState;
-use crate::states::wildfires::WildfireState;
+use crate::states::wildfires::{WildfireState, WildfiresStateTextComponent};
 use crate::*;
 
 use crate::audio::initialise_audio;
@@ -89,6 +89,7 @@ impl SimpleState for MainMenuState {
         // Register the components we won't use in any systems
         world.register::<LevelComponent>();
         world.register::<TimerComponent>();
+        world.register::<WildfiresStateTextComponent>();
 
         // Init 2d camera
         init_camera(world);

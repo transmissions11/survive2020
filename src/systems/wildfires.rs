@@ -20,7 +20,7 @@ use amethyst::{
 use rand::Rng;
 
 pub const MOVEMENT_SPEED: f32 = 4.0;
-pub const ROTATION_SPEED: f32 = 0.07;
+pub const ROTATION_SPEED: f32 = 0.1;
 
 pub const PLAYER_HEIGHT_AND_WIDTH: f32 = 100.0;
 
@@ -123,7 +123,7 @@ impl<'s> System<'s> for WildfiresSystem {
                                 .delete(droplet_entity)
                                 .expect("Couldn't delete droplet!");
 
-                            level_state.current_fires -= 1;
+                            level_state.current_fires = level_state.current_fires.saturating_sub(1);
                         }
                     }
                 }
@@ -247,8 +247,8 @@ impl<'s> System<'s> for WildfiresSystem {
             // Fire spawning
             {
                 if let Some(fire_sprite) = &self.fire_sprite {
-                    if every_n_seconds(0.5, &*time) {
-                        let fires_to_spawn = rng.gen_range(1, 8);
+                    if every_n_seconds(0.7, &*time) {
+                        let fires_to_spawn = rng.gen_range(1, 3);
 
                         let mut fires_left_to_spawn = fires_to_spawn;
 
