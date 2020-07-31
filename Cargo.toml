@@ -1,8 +1,15 @@
 [package]
 name = "survive2020"
+description = "Survive 2020... if you dare..."
+
 version = "0.1.0"
 authors = ["t11s <greenfeatherhelp@gmail.com>"]
 edition = "2018"
+
+[package.metadata.bundle]
+name = "Survive 2020"
+identifier = "sh.crows.survive2020"
+icon = ["assets/app_icon.png"]
 
 [dependencies]
 savefile="0.7"
