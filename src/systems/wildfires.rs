@@ -285,8 +285,21 @@ impl<'s> System<'s> for WildfiresSystem {
 
                     transform.prepend_translation_x(rng.gen_range(-6.0, 6.0));
 
-                    if !range_boost_is_active && droplet.seconds_alive >= DROPLET_MAX_SECONDS_ALIVE
-                    {
+                    let should_delete;
+
+                    if range_boost_is_active {
+                        if droplet.seconds_alive >= (DROPLET_MAX_SECONDS_ALIVE * 2.) {
+                            should_delete = true;
+                        } else {
+                            should_delete = false;
+                        }
+                    } else if droplet.seconds_alive >= DROPLET_MAX_SECONDS_ALIVE {
+                        should_delete = true;
+                    } else {
+                        should_delete = false;
+                    }
+
+                    if should_delete {
                         entities.delete(entity).expect("Couldn't delete droplet!");
                     }
                 }
