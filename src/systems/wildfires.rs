@@ -26,8 +26,8 @@ use amethyst::{
 };
 use rand::Rng;
 
-pub const MOVEMENT_SPEED: f32 = 4.0;
-pub const ROTATION_SPEED: f32 = 0.1;
+pub const MOVEMENT_SPEED: f32 = 350.0;
+pub const ROTATION_SPEED: f32 = 6.0;
 
 pub const PLAYER_HEIGHT_AND_WIDTH: f32 = 100.0;
 
@@ -323,7 +323,7 @@ impl<'s> System<'s> for WildfiresSystem {
                     if input.key_is_down(VirtualKeyCode::W) {
                         bound_transform_y_prepend(
                             firefighter_transform,
-                            MOVEMENT_SPEED,
+                            MOVEMENT_SPEED * time.delta_seconds(),
                             min_height_and_width,
                             max_height,
                         );
@@ -331,7 +331,7 @@ impl<'s> System<'s> for WildfiresSystem {
                     if input.key_is_down(VirtualKeyCode::S) {
                         bound_transform_y_prepend(
                             firefighter_transform,
-                            -MOVEMENT_SPEED,
+                            -MOVEMENT_SPEED * time.delta_seconds(),
                             min_height_and_width,
                             max_height,
                         );
@@ -340,7 +340,7 @@ impl<'s> System<'s> for WildfiresSystem {
                     if input.key_is_down(VirtualKeyCode::A) {
                         bound_transform_x_prepend(
                             firefighter_transform,
-                            -MOVEMENT_SPEED,
+                            -MOVEMENT_SPEED * time.delta_seconds(),
                             min_height_and_width,
                             max_width,
                         );
@@ -349,7 +349,7 @@ impl<'s> System<'s> for WildfiresSystem {
                     if input.key_is_down(VirtualKeyCode::D) {
                         bound_transform_x_prepend(
                             firefighter_transform,
-                            MOVEMENT_SPEED,
+                            MOVEMENT_SPEED * time.delta_seconds(),
                             min_height_and_width,
                             max_width,
                         );
@@ -359,11 +359,11 @@ impl<'s> System<'s> for WildfiresSystem {
                 // Rotation keys
                 {
                     if input.key_is_down(VirtualKeyCode::Left) {
-                        firefighter_transform.rotate_2d(-ROTATION_SPEED);
+                        firefighter_transform.rotate_2d(-ROTATION_SPEED * time.delta_seconds());
                     }
 
                     if input.key_is_down(VirtualKeyCode::Right) {
-                        firefighter_transform.rotate_2d(ROTATION_SPEED);
+                        firefighter_transform.rotate_2d(ROTATION_SPEED * time.delta_seconds());
                     }
                 }
 
