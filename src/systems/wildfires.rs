@@ -167,7 +167,8 @@ impl<'s> System<'s> for WildfiresSystem {
                                         bucket_y,
                                         fire_transform.translation().x,
                                         fire_transform.translation().y,
-                                    ) <= BUCKET_HEIGHT_AND_WIDTH * 0.5
+                                    ) <= (BUCKET_HEIGHT_AND_WIDTH * 0.5)
+                                        + (FIRE_HEIGHT_AND_WIDTH * 0.5)
                                     {
                                         // Delete the fire
                                         entities.delete(entity).expect("Couldn't delete fire.");
