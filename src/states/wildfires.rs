@@ -115,14 +115,14 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
 
         let bucket_sprite = load_sprite(world, "bucket_ability.png", 0);
         let tri_shot_sprite = load_sprite(world, "tri_shot_ability.png", 0);
-        let range_boost_sprite = load_sprite(world, "hive_trap_ability.png", 0);
+        let range_boost_sprite = load_sprite(world, "range_boost_ability.png", 0);
         init_abilities_bar(
             world,
             AbilitiesResource::new(vec![
                 Ability {
                     info: AbilityInfo {
                         ability_type: AbilityType::Bucket,
-                        seconds_to_charge: 12,
+                        seconds_to_charge: 5,
                         duration: Some(5),
                         icon: bucket_sprite,
                         max_uses: None,
@@ -133,7 +133,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
                     info: AbilityInfo {
                         ability_type: AbilityType::TriShot,
                         seconds_to_charge: 8,
-                        duration: Some(5),
+                        duration: Some(6),
                         icon: tri_shot_sprite,
                         max_uses: None,
                     },
@@ -142,7 +142,7 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
                 Ability {
                     info: AbilityInfo {
                         ability_type: AbilityType::RangeBoost,
-                        seconds_to_charge: 12,
+                        seconds_to_charge: 10,
                         duration: Some(7),
                         icon: range_boost_sprite,
                         max_uses: None,

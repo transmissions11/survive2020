@@ -112,6 +112,7 @@ impl<'s> System<'s> for WildfiresSystem {
         let mut should_be_deactivated_abilities: Vec<usize> = Vec::new();
 
         let mut tri_shot_is_active = false;
+        let mut range_boost_is_active = false;
 
         // Handle abilities
         for (index, ability) in abilities.available_abilities.iter().enumerate() {
@@ -138,7 +139,7 @@ impl<'s> System<'s> for WildfiresSystem {
                             let (bucket_x, bucket_y) = {
                                 let bucket_transform = transform_storage.get_mut(bucket).unwrap();
 
-                                bucket_transform.set_translation_xyz(mouse_pos.0, mouse_pos.1, 0.0);
+                                bucket_transform.set_translation_xyz(mouse_pos.0, mouse_pos.1, 4.0);
 
                                 (mouse_pos.0, mouse_pos.1)
                             };
@@ -186,7 +187,7 @@ impl<'s> System<'s> for WildfiresSystem {
 
                             let mut transform = Transform::default();
 
-                            transform.set_translation_xyz(mouse_pos.0, mouse_pos.1, 1.0);
+                            transform.set_translation_xyz(mouse_pos.0, mouse_pos.1, 4.0);
 
                             self.bucket = Some(
                                 lazy.create_entity(&entities)
@@ -202,6 +203,10 @@ impl<'s> System<'s> for WildfiresSystem {
 
                     AbilityType::TriShot => {
                         tri_shot_is_active = true;
+                    }
+
+                    AbilityType::RangeBoost => {
+                        range_boost_is_active = true;
                     }
 
                     _ => {}
@@ -272,7 +277,8 @@ impl<'s> System<'s> for WildfiresSystem {
 
                     transform.prepend_translation_x(rng.gen_range(-6.0, 6.0));
 
-                    if droplet.seconds_alive >= DROPLET_MAX_SECONDS_ALIVE {
+                    if !range_boost_is_active && droplet.seconds_alive >= DROPLET_MAX_SECONDS_ALIVE
+                    {
                         entities.delete(entity).expect("Couldn't delete droplet!");
                     }
                 }
