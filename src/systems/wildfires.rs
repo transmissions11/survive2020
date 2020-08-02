@@ -1,8 +1,14 @@
+use crate::audio::sound_keys::FLY_SWAT_SOUND;
+use crate::audio::{play_sound_system, SoundsResource};
+use crate::resources::abilities::{AbilitiesResource, AbilityType};
 use crate::states::wildfires::WildfireStateResource;
 use crate::states::{LevelComponent, LevelSecondsResource};
+use crate::systems::ability_bar::RemoveItem;
 use crate::systems::{distance_between_points, load_sprite_system};
 use crate::{bound_transform_x_prepend, bound_transform_y_prepend, every_n_seconds};
 use amethyst::assets::{AssetStorage, Loader};
+use amethyst::audio::output::Output;
+use amethyst::audio::Source;
 use amethyst::core::ecs::{
     Component, DenseVecStorage, Entities, Entity, Join, LazyUpdate, Read, ReadExpect, ReadStorage,
     Write, WriteStorage,
@@ -13,6 +19,7 @@ use amethyst::prelude::Builder;
 use amethyst::renderer::rendy::wsi::winit::VirtualKeyCode;
 use amethyst::renderer::{SpriteRender, SpriteSheet, Texture, Transparent};
 use amethyst::window::ScreenDimensions;
+use amethyst::winit::MouseButton;
 use amethyst::{
     derive::SystemDesc,
     ecs::prelude::{System, SystemData},
@@ -29,6 +36,8 @@ pub const DROPLET_SPEED: f32 = 140.0;
 pub const DROPLET_MAX_SECONDS_ALIVE: f32 = 0.7;
 
 pub const FIRE_HEIGHT_AND_WIDTH: f32 = 50.0;
+
+pub const BUCKET_HEIGHT_AND_WIDTH: f32 = 200.0;
 
 #[derive(Default)]
 pub struct Fire;
@@ -50,6 +59,8 @@ pub struct WildfiresSystem {
     pub firefighter_entity: Option<Entity>,
     pub droplet_sprite: Option<SpriteRender>,
     pub fire_sprite: Option<SpriteRender>,
+
+    pub bucket: Option<Entity>,
 }
 
 impl<'s> System<'s> for WildfiresSystem {
@@ -67,6 +78,10 @@ impl<'s> System<'s> for WildfiresSystem {
         WriteStorage<'s, Droplet>,
         ReadStorage<'s, Fire>,
         Read<'s, InputHandler<StringBindings>>,
+        Write<'s, AbilitiesResource>,
+        Read<'s, AssetStorage<Source>>,
+        ReadExpect<'s, SoundsResource>,
+        Option<Read<'s, Output>>,
     );
 
     fn run(
@@ -85,9 +100,121 @@ impl<'s> System<'s> for WildfiresSystem {
             mut droplet_storage,
             fire_storage,
             input,
+            mut abilities,
+            audio_storage,
+            sounds,
+            audio_output,
         ): Self::SystemData,
     ) {
         let mut rng = rand::thread_rng();
+
+        // All indexes in this ability will be removed from active_abilities
+        let mut should_be_deactivated_abilities: Vec<usize> = Vec::new();
+
+        let mut tri_shot_is_active = false;
+
+        // Handle abilities
+        for (index, ability) in abilities.available_abilities.iter().enumerate() {
+            // If that ability is active
+            if abilities.active_abilities.contains(&index) {
+                let mut mouse_pos = input.mouse_position().unwrap_or((0., 0.));
+
+                // Mouse pos height is determined from top left instead of bottom left so we have to flip this.
+                mouse_pos.1 = dimensions.height() - mouse_pos.1;
+
+                match ability.info.ability_type {
+                    AbilityType::Bucket => {
+                        // If the ability is about to expire
+                        if ability.current_state.percentage < 0.05 {
+                            // Delete the bucket sprite.
+                            if let Some(bucket) = self.bucket {
+                                entities
+                                    .delete(bucket)
+                                    .expect("Couldn't delete big swatter!");
+
+                                self.bucket = None;
+                            }
+                        } else if let Some(bucket) = self.bucket {
+                            let (bucket_x, bucket_y) = {
+                                let bucket_transform = transform_storage.get_mut(bucket).unwrap();
+
+                                bucket_transform.set_translation_xyz(mouse_pos.0, mouse_pos.1, 0.0);
+
+                                (mouse_pos.0, mouse_pos.1)
+                            };
+
+                            if input.mouse_button_is_down(MouseButton::Left) {
+                                // Can only use bucket once.
+                                should_be_deactivated_abilities.push(index);
+                                entities
+                                    .delete(bucket)
+                                    .expect("Couldn't delete big swatter!");
+                                self.bucket = None;
+
+                                // TODO REPLACE
+                                play_sound_system(
+                                    FLY_SWAT_SOUND,
+                                    &sounds,
+                                    &audio_storage,
+                                    &audio_output,
+                                );
+
+                                for (entity, _fire, fire_transform) in
+                                    (&entities, &fire_storage, &transform_storage).join()
+                                {
+                                    if distance_between_points(
+                                        bucket_x,
+                                        bucket_y,
+                                        fire_transform.translation().x,
+                                        fire_transform.translation().y,
+                                    ) <= BUCKET_HEIGHT_AND_WIDTH * 0.5
+                                    {
+                                        // Delete the fire
+                                        entities.delete(entity).expect("Couldn't delete fire.");
+                                    }
+                                }
+                            }
+                        } else {
+                            let bucket_sprite = load_sprite_system(
+                                &texture_storage,
+                                &sheet_storage,
+                                &loader,
+                                "bucket.png",
+                                0,
+                            );
+
+                            let mut transform = Transform::default();
+
+                            transform.set_translation_xyz(mouse_pos.0, mouse_pos.1, 1.0);
+
+                            self.bucket = Some(
+                                lazy.create_entity(&entities)
+                                    // Tag entity with LevelComponent so it gets deleted on close.
+                                    .with(LevelComponent)
+                                    .with(bucket_sprite)
+                                    .with(Transparent)
+                                    .with(transform)
+                                    .build(),
+                            );
+                        }
+                    }
+
+                    AbilityType::TriShot => {
+                        tri_shot_is_active = true;
+                    }
+
+                    _ => {}
+                }
+            }
+        }
+
+        // Remove abilities that have been used
+        for index in should_be_deactivated_abilities {
+            abilities.available_abilities[index]
+                .current_state
+                .percentage = 0.0;
+            abilities.active_abilities.remove_first_found_item(&index);
+        }
 
         if let Some(firefighter_entity) = &self.firefighter_entity {
             // Fire collisions
@@ -232,18 +359,35 @@ impl<'s> System<'s> for WildfiresSystem {
                             droplet_sprite = new_sprite;
                         }
 
-                        let mut droplet_transform = (*firefighter_transform).clone();
+                        let droplet_sections_to_spawn = if tri_shot_is_active { 3 } else { 1 };
 
-                        droplet_transform.move_up(PLAYER_HEIGHT_AND_WIDTH * 0.5);
-                        droplet_transform.move_right(15.);
+                        for n in 1..=droplet_sections_to_spawn {
+                            let mut droplet_transform = (*firefighter_transform).clone();
 
-                        lazy.create_entity(&*entities)
-                            .with(droplet_sprite)
-                            .with(droplet_transform)
-                            .with(LevelComponent)
-                            .with(Droplet { seconds_alive: 0. })
-                            .with(Transparent)
-                            .build();
+                            droplet_transform.move_up(PLAYER_HEIGHT_AND_WIDTH * 0.5);
+
+                            if !tri_shot_is_active || n == 2 {
+                                droplet_transform.move_right(15.);
+                            } else {
+                                if n == 1 {
+                                    droplet_transform.move_left(30.);
+                                    droplet_transform.prepend_rotation_z_axis(5.);
+                                }
+
+                                if n == 3 {
+                                    droplet_transform.move_right(45.);
+                                    droplet_transform.prepend_rotation_z_axis(-5.);
+                                }
+                            }
+
+                            lazy.create_entity(&*entities)
+                                .with(droplet_sprite.clone())
+                                .with(droplet_transform)
+                                .with(LevelComponent)
+                                .with(Droplet { seconds_alive: 0. })
+                                .with(Transparent)
+                                .build();
+                        }
                     }
                 }
             }

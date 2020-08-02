@@ -27,10 +27,13 @@ pub struct Ability {
 
 /// Type of ability.
 pub enum AbilityType {
-    Vaccine,
     FlySwatter,
     BugSpray,
     HiveTrap,
+
+    TriShot,
+    Bucket,
+    RangeBoost,
 }
 
 /// Information about an ability.

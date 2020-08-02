@@ -11,6 +11,10 @@ use crate::states::{
     return_to_main_menu_on_escape, run_systems, LevelComponent, LevelSecondsResource,
 };
 
+use crate::resources::abilities::{
+    AbilitiesResource, Ability, AbilityInfo, AbilityState, AbilityType,
+};
+use crate::systems::ability_bar::init_abilities_bar;
 use amethyst::core::ecs::DenseVecStorage;
 use amethyst::shred::Dispatcher;
 use amethyst::ui::{Anchor, LineMode, UiText, UiTransform};
@@ -109,20 +113,44 @@ impl<'a, 'b> SimpleState for WildfireState<'a, 'b> {
         // Init the resource storing data about the player's progress on the level
         world.insert(WildfireStateResource::default());
 
-        // let vaccine_sprite = load_sprite(world, "vaccine_ability.png", 0);
-        // init_abilities_bar(
-        //     world,
-        //     AbilitiesResource::new(vec![Ability {
-        //         info: AbilityInfo {
-        //             ability_type: AbilityType::Vaccine,
-        //             seconds_to_charge: 1,
-        //             duration: Some(1),
-        //             icon: vaccine_sprite,
-        //             max_uses: Some(5),
-        //         },
-        //         current_state: AbilityState::start_on_cooldown(),
-        //     }]),
-        // );
+        let bucket_sprite = load_sprite(world, "bucket_ability.png", 0);
+        let tri_shot_sprite = load_sprite(world, "tri_shot_ability.png", 0);
+        let range_boost_sprite = load_sprite(world, "hive_trap_ability.png", 0);
+        init_abilities_bar(
+            world,
+            AbilitiesResource::new(vec![
+                Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::Bucket,
+                        seconds_to_charge: 12,
+                        duration: Some(5),
+                        icon: bucket_sprite,
+                        max_uses: None,
+                    },
+                    current_state: AbilityState::default(),
+                },
+                Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::TriShot,
+                        seconds_to_charge: 8,
+                        duration: Some(5),
+                        icon: tri_shot_sprite,
+                        max_uses: None,
+                    },
+                    current_state: AbilityState::default(),
+                },
+                Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::RangeBoost,
+                        seconds_to_charge: 12,
+                        duration: Some(7),
+                        icon: range_boost_sprite,
+                        max_uses: None,
+                    },
+                    current_state: AbilityState::default(),
+                },
+            ]),
+        );
 
         self.dispatcher = create_optional_systems_dispatcher(world, |builder, _| {
             builder.add(WildfiresSystem::default(), "wildfires", &[])
