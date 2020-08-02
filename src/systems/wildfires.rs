@@ -172,6 +172,9 @@ impl<'s> System<'s> for WildfiresSystem {
                                     {
                                         // Delete the fire
                                         entities.delete(entity).expect("Couldn't delete fire.");
+
+                                        level_state.current_fires =
+                                            level_state.current_fires.saturating_sub(1);
                                     }
                                 }
                             }
