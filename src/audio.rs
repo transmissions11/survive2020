@@ -34,6 +34,7 @@ pub mod sound_keys {
     pub const HIVE_TRAP_SOUND: &str = "audio/hive_trap.ogg";
     pub const BUCKET_SOUND: &str = "audio/bucket.ogg";
     pub const FIRE_SOUND: &str = "audio/fire.ogg";
+    pub const FIRE_OUT_SOUND: &str = "audio/fire_out.ogg";
 }
 
 pub const MUSIC_TRACKS: &[&str] = &[
@@ -81,6 +82,11 @@ pub fn initialise_audio(world: &mut World) {
         sounds.insert(
             sound_keys::FIRE_SOUND.to_string(),
             load_audio_track(&loader, &world, sound_keys::FIRE_SOUND),
+        );
+
+        sounds.insert(
+            sound_keys::FIRE_OUT_SOUND.to_string(),
+            load_audio_track(&loader, &world, sound_keys::FIRE_OUT_SOUND),
         );
 
         let mut sink = world.write_resource::<AudioSink>();

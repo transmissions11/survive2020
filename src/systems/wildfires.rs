@@ -1,4 +1,4 @@
-use crate::audio::sound_keys::{BUCKET_SOUND, FIRE_SOUND};
+use crate::audio::sound_keys::{BUCKET_SOUND, FIRE_OUT_SOUND, FIRE_SOUND};
 use crate::audio::{play_sound_system, SoundsResource};
 use crate::resources::abilities::{AbilitiesResource, AbilityType};
 use crate::states::wildfires::WildfireStateResource;
@@ -260,6 +260,13 @@ impl<'s> System<'s> for WildfiresSystem {
                                 .expect("Couldn't delete droplet!");
 
                             level_state.current_fires = level_state.current_fires.saturating_sub(1);
+
+                            play_sound_system(
+                                FIRE_OUT_SOUND,
+                                &sounds,
+                                &audio_storage,
+                                &audio_output,
+                            );
 
                             break 'inner;
                         }
