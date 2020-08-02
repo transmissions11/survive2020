@@ -32,6 +32,7 @@ pub mod sound_keys {
     pub const BUG_SPRAY_SOUND: &str = "audio/bug_spray.ogg";
     pub const FLY_SWAT_SOUND: &str = "audio/fly_swat.ogg";
     pub const HIVE_TRAP_SOUND: &str = "audio/hive_trap.ogg";
+    pub const BUCKET_SOUND: &str = "audio/bucket.ogg";
 }
 
 pub const MUSIC_TRACKS: &[&str] = &[
@@ -69,6 +70,11 @@ pub fn initialise_audio(world: &mut World) {
         sounds.insert(
             sound_keys::HIVE_TRAP_SOUND.to_string(),
             load_audio_track(&loader, &world, sound_keys::HIVE_TRAP_SOUND),
+        );
+
+        sounds.insert(
+            sound_keys::BUCKET_SOUND.to_string(),
+            load_audio_track(&loader, &world, sound_keys::BUCKET_SOUND),
         );
 
         let mut sink = world.write_resource::<AudioSink>();

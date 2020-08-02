@@ -1,4 +1,4 @@
-use crate::audio::sound_keys::FLY_SWAT_SOUND;
+use crate::audio::sound_keys::{BUCKET_SOUND};
 use crate::audio::{play_sound_system, SoundsResource};
 use crate::resources::abilities::{AbilitiesResource, AbilityType};
 use crate::states::wildfires::WildfireStateResource;
@@ -152,9 +152,8 @@ impl<'s> System<'s> for WildfiresSystem {
                                     .expect("Couldn't delete big swatter!");
                                 self.bucket = None;
 
-                                // TODO REPLACE
                                 play_sound_system(
-                                    FLY_SWAT_SOUND,
+                                    BUCKET_SOUND,
                                     &sounds,
                                     &audio_storage,
                                     &audio_output,
