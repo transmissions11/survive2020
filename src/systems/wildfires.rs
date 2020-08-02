@@ -1,4 +1,4 @@
-use crate::audio::sound_keys::{BUCKET_SOUND};
+use crate::audio::sound_keys::{BUCKET_SOUND, FIRE_SOUND};
 use crate::audio::{play_sound_system, SoundsResource};
 use crate::resources::abilities::{AbilitiesResource, AbilityType};
 use crate::states::wildfires::WildfireStateResource;
@@ -239,6 +239,8 @@ impl<'s> System<'s> for WildfiresSystem {
                     {
                         entities.delete(fire_entity).expect("Couldn't delete fire!");
                         level_state.stepped_in_fire_times += 1;
+
+                        play_sound_system(FIRE_SOUND, &sounds, &audio_storage, &audio_output);
                     }
 
                     'inner: for (_, droplet_transform, droplet_entity) in
