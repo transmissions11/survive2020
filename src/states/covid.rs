@@ -9,6 +9,10 @@ use crate::states::{
     return_to_main_menu_on_escape, run_systems, LevelComponent, LevelSecondsResource,
 };
 
+use crate::resources::abilities::{
+    AbilitiesResource, Ability, AbilityInfo, AbilityState, AbilityType,
+};
+use crate::systems::ability_bar::init_abilities_bar;
 use crate::systems::covid::CovidSystem;
 use amethyst::core::ecs::DenseVecStorage;
 use amethyst::shred::Dispatcher;
@@ -96,44 +100,21 @@ impl<'a, 'b> SimpleState for CovidState<'a, 'b> {
         // Init the resource storing data about the player's progress on the level
         world.insert(CovidStateResource::default());
 
-        // let bucket_sprite = load_sprite(world, "bucket_ability.png", 0);
-        // let tri_shot_sprite = load_sprite(world, "tri_shot_ability.png", 0);
-        // let range_boost_sprite = load_sprite(world, "range_boost_ability.png", 0);
-        // init_abilities_bar(
-        //     world,
-        //     AbilitiesResource::new(vec![
-        //         Ability {
-        //             info: AbilityInfo {
-        //                 ability_type: AbilityType::Bucket,
-        //                 seconds_to_charge: 5,
-        //                 duration: Some(5),
-        //                 icon: bucket_sprite,
-        //                 max_uses: None,
-        //             },
-        //             current_state: AbilityState::default(),
-        //         },
-        //         Ability {
-        //             info: AbilityInfo {
-        //                 ability_type: AbilityType::TriShot,
-        //                 seconds_to_charge: 8,
-        //                 duration: Some(6),
-        //                 icon: tri_shot_sprite,
-        //                 max_uses: None,
-        //             },
-        //             current_state: AbilityState::default(),
-        //         },
-        //         Ability {
-        //             info: AbilityInfo {
-        //                 ability_type: AbilityType::RangeBoost,
-        //                 seconds_to_charge: 10,
-        //                 duration: Some(7),
-        //                 icon: range_boost_sprite,
-        //                 max_uses: None,
-        //             },
-        //             current_state: AbilityState::default(),
-        //         },
-        //     ]),
-        // );
+        let mask_sprite = load_sprite(world, "mask_ability.png", 0);
+
+        init_abilities_bar(
+            world,
+            AbilitiesResource::new(vec![Ability {
+                info: AbilityInfo {
+                    ability_type: AbilityType::Mask,
+                    seconds_to_charge: 17,
+                    duration: Some(5),
+                    icon: mask_sprite,
+                    max_uses: None,
+                },
+                current_state: AbilityState::default(),
+            }]),
+        );
 
         self.dispatcher = create_optional_systems_dispatcher(world, |builder, _| {
             builder.add(CovidSystem::default(), "covid", &[])

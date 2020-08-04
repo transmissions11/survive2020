@@ -1,5 +1,5 @@
 use crate::audio::{play_sound_system, SoundsResource};
-use crate::resources::abilities::AbilitiesResource;
+use crate::resources::abilities::{AbilitiesResource, AbilityType};
 use crate::states::covid::CovidStateResource;
 
 use crate::states::{LevelComponent, LevelSecondsResource};
@@ -22,6 +22,7 @@ use amethyst::window::ScreenDimensions;
 
 use crate::audio::sound_keys::{BUCKET_SOUND, FIRE_OUT_SOUND, FIRE_SOUND};
 
+use crate::systems::ability_bar::RemoveItem;
 use amethyst::{
     derive::SystemDesc,
     ecs::prelude::{System, SystemData},
@@ -74,6 +75,8 @@ impl Component for HealthPackComponent {
 #[derive(SystemDesc, Default)]
 pub struct CovidSystem {
     pub player_entity: Option<Entity>,
+    pub masked_player_sprite: Option<SpriteRender>,
+    pub player_sprite: Option<SpriteRender>,
     pub covid_sprite: Option<SpriteRender>,
     pub spreader_sprite: Option<SpriteRender>,
     pub health_pack_sprite: Option<SpriteRender>,
@@ -94,6 +97,7 @@ impl<'s> System<'s> for CovidSystem {
         ReadStorage<'s, SuperSpreaderComponent>,
         ReadStorage<'s, CovidCellComponent>,
         ReadStorage<'s, HealthPackComponent>,
+        WriteStorage<'s, SpriteRender>,
         Read<'s, InputHandler<StringBindings>>,
         Write<'s, AbilitiesResource>,
         Read<'s, AssetStorage<Source>>,
@@ -117,8 +121,9 @@ impl<'s> System<'s> for CovidSystem {
             spreader_storage,
             covid_storage,
             health_pack_storage,
+            mut sprite_render_storage,
             input,
-            abilities,
+            mut abilities,
             audio_storage,
             sounds,
             audio_output,
@@ -137,18 +142,97 @@ impl<'s> System<'s> for CovidSystem {
                 )
             };
 
+            // All indexes in this ability will be removed from active_abilities
+            let mut should_be_deactivated_abilities: Vec<usize> = Vec::new();
+
+            let mut mask_is_active = false;
+
+            // Handle abilities
+            for (index, ability) in abilities.available_abilities.iter().enumerate() {
+                // If that ability is active
+                if abilities.active_abilities.contains(&index) {
+                    match ability.info.ability_type {
+                        AbilityType::Mask => {
+                            // If the ability is about to expire
+                            if ability.current_state.percentage < 0.05 {
+                                // Get the player sprite
+                                if let Some(player_sprite) = &self.player_sprite {
+                                    let current_player_sprite =
+                                        sprite_render_storage.get_mut(*player_entity).unwrap();
+
+                                    // If the player's sprite is not already set to default
+                                    if current_player_sprite.sprite_sheet.id()
+                                        != player_sprite.sprite_sheet.id()
+                                    {
+                                        // Set the player sprite to a masked version
+                                        *current_player_sprite = player_sprite.clone();
+                                    }
+                                } else {
+                                    self.player_sprite = Some(load_sprite_system(
+                                        &texture_storage,
+                                        &sheet_storage,
+                                        &loader,
+                                        "covid_player.png",
+                                        0,
+                                    ));
+                                }
+                            }
+                            // If the ability has just been cast
+                            else if ability.current_state.percentage > 0.99 {
+                                // Get the masked player sprite
+                                if let Some(masked_player_sprite) = &self.masked_player_sprite {
+                                    let current_player_sprite =
+                                        sprite_render_storage.get_mut(*player_entity).unwrap();
+
+                                    // If the player's sprite is not already set to mask
+                                    if current_player_sprite.sprite_sheet.id()
+                                        != masked_player_sprite.sprite_sheet.id()
+                                    {
+                                        // Set the player sprite to a masked version
+                                        *current_player_sprite = masked_player_sprite.clone();
+                                    }
+                                } else {
+                                    self.masked_player_sprite = Some(load_sprite_system(
+                                        &texture_storage,
+                                        &sheet_storage,
+                                        &loader,
+                                        "masked_covid_player.png",
+                                        0,
+                                    ));
+                                }
+                            } else {
+                                mask_is_active = true;
+                            }
+                        }
+
+                        AbilityType::Bucket => {}
+
+                        _ => {}
+                    }
+                }
+            }
+
+            // Remove abilities that have been used
+            for index in should_be_deactivated_abilities {
+                abilities.available_abilities[index]
+                    .current_state
+                    .percentage = 0.0;
+                abilities.active_abilities.remove_first_found_item(&index);
+            }
+
             // Health pack collisions
             {
                 for (_, health_pack_transform, entity) in
                     (&health_pack_storage, &transform_storage, &entities).join()
                 {
                     // Health pack collisions
-                    if distance_between_points(
-                        player_x,
-                        player_y,
-                        health_pack_transform.translation().x,
-                        health_pack_transform.translation().y,
-                    ) <= (0.5 * COVID_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
+                    if !mask_is_active
+                        && distance_between_points(
+                            player_x,
+                            player_y,
+                            health_pack_transform.translation().x,
+                            health_pack_transform.translation().y,
+                        ) <= (0.5 * COVID_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
                     {
                         entities.delete(entity).expect("Couldn't delete covid!");
                         level_state.current_health =
@@ -204,12 +288,13 @@ impl<'s> System<'s> for CovidSystem {
                     (&covid_storage, &transform_storage, &entities).join()
                 {
                     // Covid collisions
-                    if distance_between_points(
-                        player_x,
-                        player_y,
-                        covid_transform.translation().x,
-                        covid_transform.translation().y,
-                    ) <= (0.5 * COVID_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
+                    if !mask_is_active
+                        && distance_between_points(
+                            player_x,
+                            player_y,
+                            covid_transform.translation().x,
+                            covid_transform.translation().y,
+                        ) <= (0.5 * COVID_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
                     {
                         entities.delete(entity).expect("Couldn't delete covid!");
                         level_state.current_health = level_state.current_health.saturating_sub(10);
@@ -309,12 +394,13 @@ impl<'s> System<'s> for CovidSystem {
                     }
 
                     // Spreader collisions
-                    if distance_between_points(
-                        player_x,
-                        player_y,
-                        spreader_transform.translation().x,
-                        spreader_transform.translation().y,
-                    ) <= (0.5 * SPREADER_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
+                    if !mask_is_active
+                        && distance_between_points(
+                            player_x,
+                            player_y,
+                            spreader_transform.translation().x,
+                            spreader_transform.translation().y,
+                        ) <= (0.5 * SPREADER_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
                     {
                         entities.delete(entity).expect("Couldn't delete spreader!");
                         level_state.current_health = level_state.current_health.saturating_sub(10);

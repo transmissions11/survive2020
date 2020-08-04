@@ -34,6 +34,8 @@ pub enum AbilityType {
     TriShot,
     Bucket,
     RangeBoost,
+
+    Mask,
 }
 
 /// Information about an ability.
