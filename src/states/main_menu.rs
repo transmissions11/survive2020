@@ -1,4 +1,4 @@
-use crate::resources::high_scores::highscores_keys::{HORNETS, WILDFIRES};
+use crate::resources::high_scores::highscores_keys::{COVID, HORNETS, WILDFIRES};
 use crate::resources::high_scores::load_scores;
 use crate::states::hornets::HornetState;
 use crate::states::wildfires::{WildfireState, WildfiresStateTextComponent};
@@ -7,12 +7,14 @@ use crate::*;
 use crate::audio::initialise_audio;
 use crate::states::{init_camera, init_level_title, LevelComponent, TimerComponent};
 
+use crate::states::covid::{CovidState, CovidStateTextComponent};
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEventType};
 
 #[derive(Default)]
 pub struct MainMenuState {
     hornets_and_highscore_button: Option<(UiButton, UiButton)>,
     wildfires_and_highscore_button: Option<(UiButton, UiButton)>,
+    covid_and_highscore_button: Option<(UiButton, UiButton)>,
 }
 
 /// Creates a button for a level and displays that level's highscore.
@@ -90,6 +92,7 @@ impl SimpleState for MainMenuState {
         world.register::<LevelComponent>();
         world.register::<TimerComponent>();
         world.register::<WildfiresStateTextComponent>();
+        world.register::<CovidStateTextComponent>();
 
         // Init 2d camera
         init_camera(world);
@@ -118,6 +121,12 @@ impl SimpleState for MainMenuState {
             2,
             high_scores.get_score(HORNETS),
         ));
+        self.covid_and_highscore_button = Some(create_level_button_with_highscore(
+            world,
+            "Covid-19",
+            3,
+            high_scores.get_score(COVID),
+        ));
 
         world.insert(high_scores);
     }
@@ -129,6 +138,7 @@ impl SimpleState for MainMenuState {
 
         delete_level_and_highscore_buttons(world, &self.hornets_and_highscore_button);
         delete_level_and_highscore_buttons(world, &self.wildfires_and_highscore_button);
+        delete_level_and_highscore_buttons(world, &self.covid_and_highscore_button);
     }
 
     fn handle_event(
@@ -152,10 +162,19 @@ impl SimpleState for MainMenuState {
                         .0
                         .image_entity;
 
+                    let covid_button = self
+                        .covid_and_highscore_button
+                        .as_ref()
+                        .unwrap()
+                        .0
+                        .image_entity;
+
                     if ui_event.target == wildfires_button {
                         Trans::Replace(Box::new(WildfireState::default()))
                     } else if ui_event.target == hornets_button {
                         Trans::Replace(Box::new(HornetState::default()))
+                    } else if ui_event.target == covid_button {
+                        Trans::Replace(Box::new(CovidState::default()))
                     } else {
                         Trans::None
                     }

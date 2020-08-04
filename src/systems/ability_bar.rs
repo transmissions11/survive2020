@@ -4,7 +4,7 @@ use crate::*;
 use amethyst::core::ecs::{Component, DenseVecStorage, World};
 use amethyst::core::shrev::EventChannel;
 use amethyst::core::Transform;
-use amethyst::renderer::SpriteRender;
+use amethyst::renderer::{SpriteRender, Transparent};
 use amethyst::ui::{Anchor, UiButton, UiButtonBuilder, UiEvent, UiEventType, UiImage, UiTransform};
 use amethyst::window::ScreenDimensions;
 use amethyst::{core::timing::Time, derive::SystemDesc, ecs::prelude::*};
@@ -151,6 +151,7 @@ pub fn create_ability_item(
     world
         .create_entity()
         .with(icon_transform)
+        .with(Transparent)
         .with(icon)
         .with(LevelComponent)
         .build();

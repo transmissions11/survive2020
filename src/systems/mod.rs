@@ -4,6 +4,7 @@ use amethyst::core::ecs::Read;
 use amethyst::renderer::{ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture};
 
 pub mod ability_bar;
+pub mod covid;
 pub mod hornets;
 pub mod wildfires;
 

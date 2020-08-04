@@ -19,8 +19,6 @@ use amethyst::core::ecs::DenseVecStorage;
 use amethyst::shred::Dispatcher;
 use amethyst::ui::{Anchor, LineMode, UiText, UiTransform};
 
-pub const MAX_SECONDS: f32 = 60.0 * 5.0;
-
 pub const MAX_FIRES: u64 = 60;
 
 /// Tags a component as the wildfire state text.
@@ -33,7 +31,7 @@ fn init_wildfires_state_text(world: &mut World, max_fires: u64) {
     let font = get_main_font(world);
 
     let transform = UiTransform::new(
-        "timer_text".to_string(),
+        "wildfire_state".to_string(),
         Anchor::TopMiddle,
         Anchor::TopMiddle,
         0.0,

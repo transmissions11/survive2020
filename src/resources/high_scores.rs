@@ -8,6 +8,7 @@ use std::collections::HashMap;
 pub mod highscores_keys {
     pub const WILDFIRES: &str = "wildfires";
     pub const HORNETS: &str = "hornets";
+    pub const COVID: &str = "covid";
 }
 
 /// Each level will create this resource when it starts.
@@ -21,6 +22,7 @@ pub struct HighScoresResource {
     /// Keys:
     /// wildfires
     /// hornets
+    /// covid
     pub high_scores: HashMap<String, u64>,
 }
 

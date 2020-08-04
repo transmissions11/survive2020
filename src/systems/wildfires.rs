@@ -468,7 +468,7 @@ impl<'s> System<'s> for WildfiresSystem {
                         }
                     }
                 } else {
-                    // Load bee texture
+                    // Load fire texture
                     self.fire_sprite = Some(load_sprite_system(
                         &texture_storage,
                         &sheet_storage,
