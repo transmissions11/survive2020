@@ -57,6 +57,7 @@ impl Component for SuperSpreaderComponent {
     type Storage = DenseVecStorage<Self>;
 }
 
+// The direction the Covid cell will float towards.
 #[derive(Copy, Clone)]
 pub enum CovidDirection {
     Left,
@@ -69,7 +70,6 @@ pub enum CovidDirection {
 pub struct CovidCellComponent {
     pub direction: CovidDirection,
 }
-
 impl Component for CovidCellComponent {
     type Storage = DenseVecStorage<Self>;
 }
@@ -110,7 +110,7 @@ impl<'s> System<'s> for CovidSystem {
         ReadStorage<'s, EnemyComponent>,
         WriteStorage<'s, SpriteRender>,
         Read<'s, InputHandler<StringBindings>>,
-        Write<'s, AbilitiesResource>,
+        Read<'s, AbilitiesResource>,
         Read<'s, AssetStorage<Source>>,
         ReadExpect<'s, SoundsResource>,
         Option<Read<'s, Output>>,
@@ -136,7 +136,7 @@ impl<'s> System<'s> for CovidSystem {
             enemy_storage,
             mut sprite_render_storage,
             input,
-            mut abilities,
+            abilities,
             audio_storage,
             sounds,
             audio_output,
