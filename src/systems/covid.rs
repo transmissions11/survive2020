@@ -4,7 +4,7 @@ use crate::states::covid::CovidStateResource;
 
 use crate::states::{LevelComponent, LevelSecondsResource};
 
-use crate::systems::{distance_between_points, load_sprite_system};
+use crate::systems::{distance_between_points, handle_collisions, load_sprite_system};
 use crate::{bound, bound_transform_x_prepend, bound_transform_y_prepend, every_n_seconds};
 use amethyst::assets::{AssetStorage, Loader};
 use amethyst::audio::output::Output;
@@ -95,8 +95,8 @@ impl<'s> System<'s> for CovidSystem {
         ReadExpect<'s, ScreenDimensions>,
         WriteStorage<'s, Transform>,
         ReadStorage<'s, SuperSpreaderComponent>,
-        ReadStorage<'s, CovidCellComponent>,
-        ReadStorage<'s, HealthPackComponent>,
+        WriteStorage<'s, CovidCellComponent>,
+        WriteStorage<'s, HealthPackComponent>,
         WriteStorage<'s, SpriteRender>,
         Read<'s, InputHandler<StringBindings>>,
         Write<'s, AbilitiesResource>,
@@ -119,8 +119,8 @@ impl<'s> System<'s> for CovidSystem {
             dimensions,
             mut transform_storage,
             spreader_storage,
-            covid_storage,
-            health_pack_storage,
+            mut covid_storage,
+            mut health_pack_storage,
             mut sprite_render_storage,
             input,
             mut abilities,
@@ -220,170 +220,180 @@ impl<'s> System<'s> for CovidSystem {
                 abilities.active_abilities.remove_first_found_item(&index);
             }
 
-            // Health pack collisions
+            // Health packs
             {
-                for (_, health_pack_transform, entity) in
-                    (&health_pack_storage, &transform_storage, &entities).join()
-                {
-                    // Health pack collisions
-                    if !mask_is_active
-                        && distance_between_points(
-                            player_x,
-                            player_y,
-                            health_pack_transform.translation().x,
-                            health_pack_transform.translation().y,
-                        ) <= (0.5 * COVID_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
-                    {
-                        entities.delete(entity).expect("Couldn't delete covid!");
-                        level_state.current_health =
-                            bound(level_state.current_health as f32 + 10., 0., 100.) as u64;
+                // Health pack collisions
+                handle_collisions(
+                    &entities,
+                    &mut transform_storage,
+                    &mut health_pack_storage,
+                    HEALTH_PACK_HEIGHT_AND_WIDTH,
+                    PLAYER_HEIGHT_AND_WIDTH,
+                    player_x,
+                    player_y,
+                    |entity, _transform: &mut Transform, _health_pack: &mut HealthPackComponent| {
+                        if !mask_is_active {
+                            entities
+                                .delete(entity)
+                                .expect("Couldn't delete health pack!");
+                            level_state.current_health =
+                                bound(level_state.current_health as f32 + 10., 0., 100.) as u64;
 
-                        // TODO CHANGE
-                        play_sound_system(BUCKET_SOUND, &sounds, &audio_storage, &audio_output);
+                            // TODO CHANGE
+                            play_sound_system(BUCKET_SOUND, &sounds, &audio_storage, &audio_output);
+                        }
+                    },
+                );
+
+                // Health pack spawning
+                {
+                    if let Some(health_pack_sprite) = &self.health_pack_sprite {
+                        if every_n_seconds(10.0, &*time) {
+                            let pos_x = rng.gen_range(10., 590.);
+                            let pos_y = rng.gen_range(100., 500.);
+
+                            // Don't spawn health packs on or really close to player
+                            if distance_between_points(pos_x, pos_y, player_x, player_y)
+                                <= ((PLAYER_HEIGHT_AND_WIDTH * 0.5)
+                                    + (HEALTH_PACK_HEIGHT_AND_WIDTH * 0.5))
+                            {
+                                return;
+                            }
+
+                            let mut transform = Transform::default();
+
+                            transform.set_translation_xyz(pos_x, pos_y, 2.0);
+
+                            lazy.create_entity(&entities)
+                                .with(health_pack_sprite.clone())
+                                .with(transform)
+                                .with(Transparent)
+                                .with(LevelComponent)
+                                .with(HealthPackComponent)
+                                .build();
+                        }
+                    } else {
+                        // Load health pack texture
+                        self.health_pack_sprite = Some(load_sprite_system(
+                            &texture_storage,
+                            &sheet_storage,
+                            &loader,
+                            "health_pack.png",
+                            0,
+                        ));
                     }
                 }
             }
-            // Health pack spawning
-            {
-                if let Some(health_pack_sprite) = &self.health_pack_sprite {
-                    if every_n_seconds(10.0, &*time) {
-                        let pos_x = rng.gen_range(10., 590.);
-                        let pos_y = rng.gen_range(100., 500.);
 
-                        // Don't spawn health packs on or really close to player
-                        if distance_between_points(pos_x, pos_y, player_x, player_y)
-                            <= ((PLAYER_HEIGHT_AND_WIDTH * 0.5)
-                                + (HEALTH_PACK_HEIGHT_AND_WIDTH * 0.5))
+            // Covid
+            {
+                // Covid collisions
+                handle_collisions(
+                    &entities,
+                    &mut transform_storage,
+                    &mut covid_storage,
+                    COVID_HEIGHT_AND_WIDTH,
+                    PLAYER_HEIGHT_AND_WIDTH,
+                    player_x,
+                    player_y,
+                    |entity, _, _| {
+                        if !mask_is_active {
+                            entities.delete(entity).expect("Couldn't delete covid!");
+                            level_state.current_health =
+                                level_state.current_health.saturating_sub(10);
+
+                            // TODO CHANGE
+                            play_sound_system(
+                                FIRE_OUT_SOUND,
+                                &sounds,
+                                &audio_storage,
+                                &audio_output,
+                            );
+                        }
+                    },
+                );
+                // Covid movement
+                {
+                    for (covid, covid_transform, entity) in
+                        (&covid_storage, &mut transform_storage, &entities).join()
+                    {
+                        match covid.direction {
+                            CovidDirection::Up => {
+                                covid_transform.move_up(COVID_SPEED * time.delta_seconds());
+                            }
+                            CovidDirection::Down => {
+                                covid_transform.move_down(COVID_SPEED * time.delta_seconds());
+                            }
+                            CovidDirection::Left => {
+                                covid_transform.move_left(COVID_SPEED * time.delta_seconds());
+                            }
+                            CovidDirection::Right => {
+                                covid_transform.move_right(COVID_SPEED * time.delta_seconds());
+                            }
+                        }
+
+                        if covid_transform.translation().x >= dimensions.width()
+                            || covid_transform.translation().y >= dimensions.height()
                         {
-                            return;
+                            entities
+                                .delete(entity)
+                                .expect("Couldn't delete covid cell.")
                         }
-
-                        let mut transform = Transform::default();
-
-                        transform.set_translation_xyz(pos_x, pos_y, 2.0);
-
-                        lazy.create_entity(&entities)
-                            .with(health_pack_sprite.clone())
-                            .with(transform)
-                            .with(Transparent)
-                            .with(LevelComponent)
-                            .with(HealthPackComponent)
-                            .build();
                     }
-                } else {
-                    // Load health pack texture
-                    self.health_pack_sprite = Some(load_sprite_system(
-                        &texture_storage,
-                        &sheet_storage,
-                        &loader,
-                        "health_pack.png",
-                        0,
-                    ));
                 }
-            }
-
-            // Covid collisions
-            {
-                for (_, covid_transform, entity) in
-                    (&covid_storage, &transform_storage, &entities).join()
+                // Covid spawning
                 {
-                    // Covid collisions
-                    if !mask_is_active
-                        && distance_between_points(
-                            player_x,
-                            player_y,
-                            covid_transform.translation().x,
-                            covid_transform.translation().y,
-                        ) <= (0.5 * COVID_HEIGHT_AND_WIDTH) + (0.5 * PLAYER_HEIGHT_AND_WIDTH)
-                    {
-                        entities.delete(entity).expect("Couldn't delete covid!");
-                        level_state.current_health = level_state.current_health.saturating_sub(10);
+                    if let Some(covid_sprite) = &self.covid_sprite {
+                        if every_n_seconds(1.0, &*time) {
+                            let spawn_locations = vec![
+                                ((rng.gen_range(10., 590.), 120.), CovidDirection::Up),
+                                ((rng.gen_range(10., 590.), 480.), CovidDirection::Down),
+                                ((30., rng.gen_range(100., 500.)), CovidDirection::Right),
+                                ((570., rng.gen_range(100., 500.)), CovidDirection::Left),
+                            ];
 
-                        // TODO CHANGE
-                        play_sound_system(FIRE_OUT_SOUND, &sounds, &audio_storage, &audio_output);
+                            let chosen_location =
+                                &spawn_locations[rng.gen_range(0, spawn_locations.len())];
+
+                            let pos_x = (chosen_location.0).0;
+                            let pos_y = (chosen_location.0).1;
+
+                            // Don't spawn covid on or really close to player
+                            if distance_between_points(pos_x, pos_y, player_x, player_y)
+                                <= ((PLAYER_HEIGHT_AND_WIDTH * 0.5)
+                                    + (COVID_HEIGHT_AND_WIDTH * 0.5))
+                            {
+                                return;
+                            }
+
+                            let mut transform = Transform::default();
+
+                            transform.set_translation_xyz(pos_x, pos_y, 2.0);
+
+                            lazy.create_entity(&entities)
+                                .with(covid_sprite.clone())
+                                .with(transform)
+                                .with(Transparent)
+                                .with(LevelComponent)
+                                .with(CovidCellComponent {
+                                    direction: chosen_location.1,
+                                })
+                                .build();
+                        }
+                    } else {
+                        // Load covid texture
+                        self.covid_sprite = Some(load_sprite_system(
+                            &texture_storage,
+                            &sheet_storage,
+                            &loader,
+                            "covid.png",
+                            0,
+                        ));
                     }
                 }
             }
-            // Covid movement
-            {
-                for (covid, covid_transform, entity) in
-                    (&covid_storage, &mut transform_storage, &entities).join()
-                {
-                    match covid.direction {
-                        CovidDirection::Up => {
-                            covid_transform.move_up(COVID_SPEED * time.delta_seconds());
-                        }
-                        CovidDirection::Down => {
-                            covid_transform.move_down(COVID_SPEED * time.delta_seconds());
-                        }
-                        CovidDirection::Left => {
-                            covid_transform.move_left(COVID_SPEED * time.delta_seconds());
-                        }
-                        CovidDirection::Right => {
-                            covid_transform.move_right(COVID_SPEED * time.delta_seconds());
-                        }
-                    }
 
-                    if covid_transform.translation().x >= dimensions.width()
-                        || covid_transform.translation().y >= dimensions.height()
-                    {
-                        entities
-                            .delete(entity)
-                            .expect("Couldn't delete covid cell.")
-                    }
-                }
-            }
-            // Covid spawning
-            {
-                if let Some(covid_sprite) = &self.covid_sprite {
-                    if every_n_seconds(1.0, &*time) {
-                        let spawn_locations = vec![
-                            ((rng.gen_range(10., 590.), 120.), CovidDirection::Up),
-                            ((rng.gen_range(10., 590.), 480.), CovidDirection::Down),
-                            ((30., rng.gen_range(100., 500.)), CovidDirection::Right),
-                            ((570., rng.gen_range(100., 500.)), CovidDirection::Left),
-                        ];
-
-                        let chosen_location =
-                            &spawn_locations[rng.gen_range(0, spawn_locations.len())];
-
-                        let pos_x = (chosen_location.0).0;
-                        let pos_y = (chosen_location.0).1;
-
-                        // Don't spawn covid on or really close to player
-                        if distance_between_points(pos_x, pos_y, player_x, player_y)
-                            <= ((PLAYER_HEIGHT_AND_WIDTH * 0.5) + (COVID_HEIGHT_AND_WIDTH * 0.5))
-                        {
-                            return;
-                        }
-
-                        let mut transform = Transform::default();
-
-                        transform.set_translation_xyz(pos_x, pos_y, 2.0);
-
-                        lazy.create_entity(&entities)
-                            .with(covid_sprite.clone())
-                            .with(transform)
-                            .with(Transparent)
-                            .with(LevelComponent)
-                            .with(CovidCellComponent {
-                                direction: chosen_location.1,
-                            })
-                            .build();
-                    }
-                } else {
-                    // Load covid texture
-                    self.covid_sprite = Some(load_sprite_system(
-                        &texture_storage,
-                        &sheet_storage,
-                        &loader,
-                        "covid.png",
-                        0,
-                    ));
-                }
-            }
-
-            // Super spreader collisions and deletion
+            // Super spreaders
             {
                 for (spreader, spreader_transform, entity) in
                     (&spreader_storage, &transform_storage, &entities).join()
@@ -409,55 +419,57 @@ impl<'s> System<'s> for CovidSystem {
                         play_sound_system(FIRE_SOUND, &sounds, &audio_storage, &audio_output);
                     }
                 }
-            }
-            // Super spreader spawning
-            {
-                if let Some(spreader_sprite) = &self.spreader_sprite {
-                    if every_n_seconds(2., &*time) {
-                        // Spreaders to spawn is from 1 to (2 + however many chunks of 40 seconds have gone by).
-                        let spreaders_to_spawn =
-                            rng.gen_range(1, 2 + (level_seconds.seconds_elapsed / 40.) as u32);
 
-                        let mut spreaders_left_to_spawn = spreaders_to_spawn;
+                // Super spreader spawning
+                {
+                    if let Some(spreader_sprite) = &self.spreader_sprite {
+                        if every_n_seconds(2., &*time) {
+                            // Spreaders to spawn is from 1 to (2 + however many chunks of 40 seconds have gone by).
+                            let spreaders_to_spawn =
+                                rng.gen_range(1, 2 + (level_seconds.seconds_elapsed / 40.) as u32);
 
-                        while spreaders_left_to_spawn != 0 {
-                            let pos_x = rng.gen_range(10., 590.);
-                            let pos_y = rng.gen_range(100., 500.);
+                            let mut spreaders_left_to_spawn = spreaders_to_spawn;
 
-                            // Don't spawn spreaders on or really close to player
-                            if distance_between_points(pos_x, pos_y, player_x, player_y)
-                                <= ((PLAYER_HEIGHT_AND_WIDTH * 0.5)
-                                    + (SPREADER_HEIGHT_AND_WIDTH * 0.5))
-                            {
-                                continue;
+                            while spreaders_left_to_spawn != 0 {
+                                let pos_x = rng.gen_range(10., 590.);
+                                let pos_y = rng.gen_range(100., 500.);
+
+                                // Don't spawn spreaders on or really close to player
+                                if distance_between_points(pos_x, pos_y, player_x, player_y)
+                                    <= ((PLAYER_HEIGHT_AND_WIDTH * 0.5)
+                                        + (SPREADER_HEIGHT_AND_WIDTH * 0.5))
+                                {
+                                    continue;
+                                }
+
+                                let mut transform = Transform::default();
+
+                                transform.set_translation_xyz(pos_x, pos_y, 0.0);
+
+                                lazy.create_entity(&entities)
+                                    .with(spreader_sprite.clone())
+                                    .with(transform)
+                                    .with(Transparent)
+                                    .with(LevelComponent)
+                                    .with(SuperSpreaderComponent {
+                                        expiration_frame: time.frame_number()
+                                            + rng.gen_range(60, 640),
+                                    })
+                                    .build();
+
+                                spreaders_left_to_spawn -= 1;
                             }
-
-                            let mut transform = Transform::default();
-
-                            transform.set_translation_xyz(pos_x, pos_y, 0.0);
-
-                            lazy.create_entity(&entities)
-                                .with(spreader_sprite.clone())
-                                .with(transform)
-                                .with(Transparent)
-                                .with(LevelComponent)
-                                .with(SuperSpreaderComponent {
-                                    expiration_frame: time.frame_number() + rng.gen_range(60, 640),
-                                })
-                                .build();
-
-                            spreaders_left_to_spawn -= 1;
                         }
+                    } else {
+                        // Load spreader texture
+                        self.spreader_sprite = Some(load_sprite_system(
+                            &texture_storage,
+                            &sheet_storage,
+                            &loader,
+                            "super_spreader.png",
+                            0,
+                        ));
                     }
-                } else {
-                    // Load spreader texture
-                    self.spreader_sprite = Some(load_sprite_system(
-                        &texture_storage,
-                        &sheet_storage,
-                        &loader,
-                        "super_spreader.png",
-                        0,
-                    ));
                 }
             }
 

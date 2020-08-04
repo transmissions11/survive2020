@@ -1,12 +1,37 @@
 use amethyst::assets::{AssetStorage, Loader};
 use amethyst::core::ecs::shred::PanicHandler;
-use amethyst::core::ecs::Read;
+use amethyst::core::ecs::{Component, Entities, Entity, Join, Read, WriteStorage};
+use amethyst::core::Transform;
 use amethyst::renderer::{ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture};
 
 pub mod ability_bar;
 pub mod covid;
 pub mod hornets;
 pub mod wildfires;
+
+/// Detects collisions between components and takes an `on_collide` func which can respond to the collision.
+pub fn handle_collisions<T: Component>(
+    entities: &Entities,
+    transform_storage: &mut WriteStorage<Transform>,
+    component_storage: &mut WriteStorage<T>,
+    component_height_and_width: f32,
+    player_height_and_width: f32,
+    player_x: f32,
+    player_y: f32,
+    mut on_collide: impl FnMut(Entity, &mut Transform, &mut T),
+) {
+    for (entity, transform, component) in (entities, transform_storage, component_storage).join() {
+        if distance_between_points(
+            player_x,
+            player_y,
+            transform.translation().x,
+            transform.translation().y,
+        ) <= (0.5 * component_height_and_width) + (0.5 * player_height_and_width)
+        {
+            on_collide(entity, transform, component);
+        }
+    }
+}
 
 /// Calculates the distance between 2 points.
 fn distance_between_points(x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
