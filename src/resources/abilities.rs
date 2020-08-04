@@ -36,6 +36,7 @@ pub enum AbilityType {
     RangeBoost,
 
     Mask,
+    SprayBottle,
 }
 
 /// Information about an ability.

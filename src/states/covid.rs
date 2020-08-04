@@ -101,19 +101,32 @@ impl<'a, 'b> SimpleState for CovidState<'a, 'b> {
         world.insert(CovidStateResource::default());
 
         let mask_sprite = load_sprite(world, "mask_ability.png", 0);
+        let spray_bottle = load_sprite(world, "spray_bottle_ability.png", 0);
 
         init_abilities_bar(
             world,
-            AbilitiesResource::new(vec![Ability {
-                info: AbilityInfo {
-                    ability_type: AbilityType::Mask,
-                    seconds_to_charge: 17,
-                    duration: Some(5),
-                    icon: mask_sprite,
-                    max_uses: None,
+            AbilitiesResource::new(vec![
+                Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::Mask,
+                        seconds_to_charge: 17,
+                        duration: Some(5),
+                        icon: mask_sprite,
+                        max_uses: None,
+                    },
+                    current_state: AbilityState::default(),
                 },
-                current_state: AbilityState::default(),
-            }]),
+                Ability {
+                    info: AbilityInfo {
+                        ability_type: AbilityType::SprayBottle,
+                        seconds_to_charge: 17,
+                        duration: Some(7),
+                        icon: spray_bottle,
+                        max_uses: None,
+                    },
+                    current_state: AbilityState::default(),
+                },
+            ]),
         );
 
         self.dispatcher = create_optional_systems_dispatcher(world, |builder, _| {

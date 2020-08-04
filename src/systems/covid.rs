@@ -20,9 +20,11 @@ use amethyst::renderer::rendy::wsi::winit::VirtualKeyCode;
 use amethyst::renderer::{SpriteRender, SpriteSheet, Texture, Transparent};
 use amethyst::window::ScreenDimensions;
 
-use crate::audio::sound_keys::{BUCKET_SOUND, FIRE_OUT_SOUND, FIRE_SOUND};
+use crate::audio::sound_keys::{BEE_TAP_SOUND, BUCKET_SOUND, FIRE_OUT_SOUND, FIRE_SOUND};
 
-use crate::systems::ability_bar::RemoveItem;
+use crate::systems::wildfires::{
+    Droplet, DROPLET_HEIGHT_AND_WIDTH, DROPLET_MAX_SECONDS_ALIVE, DROPLET_SPEED,
+};
 use amethyst::{
     derive::SystemDesc,
     ecs::prelude::{System, SystemData},
@@ -40,6 +42,12 @@ pub const COVID_SPEED: f32 = 40.0;
 pub const COVID_HEIGHT_AND_WIDTH: f32 = 40.0;
 
 pub const HEALTH_PACK_HEIGHT_AND_WIDTH: f32 = 40.0;
+
+/// Tags an entity as an enemy.
+pub struct EnemyComponent;
+impl Component for EnemyComponent {
+    type Storage = DenseVecStorage<Self>;
+}
 
 /// Tags an entity as a super spreader.
 pub struct SuperSpreaderComponent {
@@ -80,6 +88,7 @@ pub struct CovidSystem {
     pub covid_sprite: Option<SpriteRender>,
     pub spreader_sprite: Option<SpriteRender>,
     pub health_pack_sprite: Option<SpriteRender>,
+    pub droplet_sprite: Option<SpriteRender>,
 }
 
 impl<'s> System<'s> for CovidSystem {
@@ -96,7 +105,9 @@ impl<'s> System<'s> for CovidSystem {
         WriteStorage<'s, Transform>,
         ReadStorage<'s, SuperSpreaderComponent>,
         WriteStorage<'s, CovidCellComponent>,
+        WriteStorage<'s, Droplet>,
         WriteStorage<'s, HealthPackComponent>,
+        ReadStorage<'s, EnemyComponent>,
         WriteStorage<'s, SpriteRender>,
         Read<'s, InputHandler<StringBindings>>,
         Write<'s, AbilitiesResource>,
@@ -120,7 +131,9 @@ impl<'s> System<'s> for CovidSystem {
             mut transform_storage,
             spreader_storage,
             mut covid_storage,
+            mut droplet_storage,
             mut health_pack_storage,
+            enemy_storage,
             mut sprite_render_storage,
             input,
             mut abilities,
@@ -141,9 +154,6 @@ impl<'s> System<'s> for CovidSystem {
                     player_transform.translation().z,
                 )
             };
-
-            // All indexes in this ability will be removed from active_abilities
-            let mut should_be_deactivated_abilities: Vec<usize> = Vec::new();
 
             let mut mask_is_active = false;
 
@@ -205,19 +215,103 @@ impl<'s> System<'s> for CovidSystem {
                             }
                         }
 
-                        AbilityType::Bucket => {}
+                        AbilityType::SprayBottle => {
+                            let droplet_sprite;
+
+                            if let Some(sprite) = &self.droplet_sprite {
+                                droplet_sprite = sprite.clone();
+                            } else {
+                                let new_sprite = load_sprite_system(
+                                    &texture_storage,
+                                    &sheet_storage,
+                                    &loader,
+                                    "droplet.png",
+                                    0,
+                                );
+
+                                self.droplet_sprite = Some(new_sprite.clone());
+
+                                droplet_sprite = new_sprite;
+                            }
+
+                            let mut droplet_transform =
+                                transform_storage.get(*player_entity).unwrap().clone();
+
+                            droplet_transform.move_up(PLAYER_HEIGHT_AND_WIDTH * 0.1);
+                            droplet_transform.move_right(30.0);
+
+                            lazy.create_entity(&*entities)
+                                .with(droplet_sprite.clone())
+                                .with(droplet_transform)
+                                .with(LevelComponent)
+                                .with(Droplet { seconds_alive: 0. })
+                                .with(Transparent)
+                                .build();
+                        }
 
                         _ => {}
                     }
                 }
             }
 
-            // Remove abilities that have been used
-            for index in should_be_deactivated_abilities {
-                abilities.available_abilities[index]
-                    .current_state
-                    .percentage = 0.0;
-                abilities.active_abilities.remove_first_found_item(&index);
+            // Droplets
+            {
+                // Droplet movement
+                {
+                    for (droplet, transform, entity) in
+                        (&mut droplet_storage, &mut transform_storage, &entities).join()
+                    {
+                        droplet.seconds_alive += time.delta_seconds();
+
+                        transform.move_up(DROPLET_SPEED * time.delta_seconds());
+
+                        transform.prepend_translation_x(rng.gen_range(-6.0, 6.0));
+
+                        if droplet.seconds_alive >= DROPLET_MAX_SECONDS_ALIVE {
+                            entities.delete(entity).expect("Couldn't delete droplet!");
+                        }
+                    }
+                }
+
+                // Droplet collisions
+                for (_, enemy_transform, enemy_entity) in
+                    (&enemy_storage, &transform_storage, &entities).join()
+                {
+                    let enemy_height_and_width = if spreader_storage.get(enemy_entity).is_some() {
+                        SPREADER_HEIGHT_AND_WIDTH
+                    } else if covid_storage.get(enemy_entity).is_some() {
+                        COVID_HEIGHT_AND_WIDTH
+                    } else {
+                        0.
+                    };
+
+                    for (_, droplet_transform, droplet_entity) in
+                        (&droplet_storage, &transform_storage, &entities).join()
+                    {
+                        if distance_between_points(
+                            droplet_transform.translation().x,
+                            droplet_transform.translation().y,
+                            enemy_transform.translation().x,
+                            enemy_transform.translation().y,
+                        ) <= (0.5 * enemy_height_and_width) + (0.5 * DROPLET_HEIGHT_AND_WIDTH)
+                        {
+                            entities
+                                .delete(enemy_entity)
+                                .expect("Couldn't delete enemy!");
+                            entities
+                                .delete(droplet_entity)
+                                .expect("Couldn't delete droplet!");
+
+                            // TODO CHANGE
+                            play_sound_system(
+                                BEE_TAP_SOUND,
+                                &sounds,
+                                &audio_storage,
+                                &audio_output,
+                            );
+                        }
+                    }
+                }
             }
 
             // Health packs
@@ -248,7 +342,7 @@ impl<'s> System<'s> for CovidSystem {
                 // Health pack spawning
                 {
                     if let Some(health_pack_sprite) = &self.health_pack_sprite {
-                        if every_n_seconds(10.0, &*time) {
+                        if every_n_seconds(6.5, &*time) {
                             let pos_x = rng.gen_range(10., 590.);
                             let pos_y = rng.gen_range(100., 500.);
 
@@ -378,6 +472,7 @@ impl<'s> System<'s> for CovidSystem {
                                 .with(CovidCellComponent {
                                     direction: chosen_location.1,
                                 })
+                                .with(EnemyComponent)
                                 .build();
                         }
                     } else {
@@ -455,6 +550,7 @@ impl<'s> System<'s> for CovidSystem {
                                         expiration_frame: time.frame_number()
                                             + rng.gen_range(60, 640),
                                     })
+                                    .with(EnemyComponent)
                                     .build();
 
                                 spreaders_left_to_spawn -= 1;
