@@ -38,9 +38,7 @@ cargo run --release --features metal
 ```
 *Replace metal with `vulkan` if you are on Windows.*
 
-# Notes/Acknowledgements:
+# Notes:
 
-- The game's audio and visual assets are still WIP. 
-- All visual assets are placeholders waiting to be replaced with higher quality artwork.
-
+- Many of the game's audio and visual assets are still WIP and may be replaced in the future. 
 - **More levels/abilities may be added in the future.**
