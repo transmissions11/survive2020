@@ -5,7 +5,7 @@
     />
      <img
         alt="Main Menu"
-        src="https://i.imgur.com/87SfhB8.png"
+        src="https://i.imgur.com/9iNjfN8.png"
     />
 </p>
 
