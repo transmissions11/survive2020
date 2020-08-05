@@ -35,6 +35,10 @@ pub mod sound_keys {
     pub const BUCKET_SOUND: &str = "audio/bucket.ogg";
     pub const FIRE_SOUND: &str = "audio/fire.ogg";
     pub const FIRE_OUT_SOUND: &str = "audio/fire_out.ogg";
+    pub const COUGH_SOUND: &str = "audio/cough.ogg";
+    pub const HEAL_SOUND: &str = "audio/heal.ogg";
+    pub const COVID_SQUISH: &str = "audio/covid_squish.ogg";
+    pub const COVID_DIE: &str = "audio/covid_die.ogg";
 }
 
 pub const MUSIC_TRACKS: &[&str] = &[
@@ -87,6 +91,26 @@ pub fn initialise_audio(world: &mut World) {
         sounds.insert(
             sound_keys::FIRE_OUT_SOUND.to_string(),
             load_audio_track(&loader, &world, sound_keys::FIRE_OUT_SOUND),
+        );
+
+        sounds.insert(
+            sound_keys::COUGH_SOUND.to_string(),
+            load_audio_track(&loader, &world, sound_keys::COUGH_SOUND),
+        );
+
+        sounds.insert(
+            sound_keys::HEAL_SOUND.to_string(),
+            load_audio_track(&loader, &world, sound_keys::HEAL_SOUND),
+        );
+
+        sounds.insert(
+            sound_keys::COVID_SQUISH.to_string(),
+            load_audio_track(&loader, &world, sound_keys::COVID_SQUISH),
+        );
+
+        sounds.insert(
+            sound_keys::COVID_DIE.to_string(),
+            load_audio_track(&loader, &world, sound_keys::COVID_DIE),
         );
 
         let mut sink = world.write_resource::<AudioSink>();

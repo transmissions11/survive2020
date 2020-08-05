@@ -20,7 +20,7 @@ use amethyst::renderer::rendy::wsi::winit::VirtualKeyCode;
 use amethyst::renderer::{SpriteRender, SpriteSheet, Texture, Transparent};
 use amethyst::window::ScreenDimensions;
 
-use crate::audio::sound_keys::{BEE_TAP_SOUND, BUCKET_SOUND, FIRE_OUT_SOUND, FIRE_SOUND};
+use crate::audio::sound_keys::{COUGH_SOUND, COVID_DIE, COVID_SQUISH, HEAL_SOUND};
 
 use crate::systems::wildfires::{
     Droplet, DROPLET_HEIGHT_AND_WIDTH, DROPLET_MAX_SECONDS_ALIVE, DROPLET_SPEED,
@@ -302,13 +302,7 @@ impl<'s> System<'s> for CovidSystem {
                                 .delete(droplet_entity)
                                 .expect("Couldn't delete droplet!");
 
-                            // TODO CHANGE
-                            play_sound_system(
-                                BEE_TAP_SOUND,
-                                &sounds,
-                                &audio_storage,
-                                &audio_output,
-                            );
+                            play_sound_system(COVID_DIE, &sounds, &audio_storage, &audio_output);
                         }
                     }
                 }
@@ -333,8 +327,7 @@ impl<'s> System<'s> for CovidSystem {
                             level_state.current_health =
                                 bound(level_state.current_health as f32 + 10., 0., 100.) as u64;
 
-                            // TODO CHANGE
-                            play_sound_system(BUCKET_SOUND, &sounds, &audio_storage, &audio_output);
+                            play_sound_system(HEAL_SOUND, &sounds, &audio_storage, &audio_output);
                         }
                     },
                 );
@@ -396,13 +389,7 @@ impl<'s> System<'s> for CovidSystem {
                             level_state.current_health =
                                 level_state.current_health.saturating_sub(10);
 
-                            // TODO CHANGE
-                            play_sound_system(
-                                FIRE_OUT_SOUND,
-                                &sounds,
-                                &audio_storage,
-                                &audio_output,
-                            );
+                            play_sound_system(COVID_SQUISH, &sounds, &audio_storage, &audio_output);
                         }
                     },
                 );
@@ -510,8 +497,7 @@ impl<'s> System<'s> for CovidSystem {
                         entities.delete(entity).expect("Couldn't delete spreader!");
                         level_state.current_health = level_state.current_health.saturating_sub(10);
 
-                        // TODO CHANGE
-                        play_sound_system(FIRE_SOUND, &sounds, &audio_storage, &audio_output);
+                        play_sound_system(COUGH_SOUND, &sounds, &audio_storage, &audio_output);
                     }
                 }
 
