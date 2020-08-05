@@ -36,7 +36,7 @@ Survive as long as you can against an onslaught of super spreaders, and COVID pa
 ```bash
 cargo run --release --features metal
 ```
-*Replace metal with `vulkan` if you are on Windows.*
+*Replace `metal` with `vulkan` if you are on Windows.*
 
 # Notes:
 
